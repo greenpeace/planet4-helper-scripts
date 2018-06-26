@@ -37,25 +37,7 @@ echo "Pod:        $pod"
 echo ""
 echo "Option:     $option_name"
 echo "Key:        $option_key"
-echo "Value:      $option_value"
+# echo "Value:      $option_value"
 echo ""
 
-old=$($kc exec $pod -- wp option get ${option_name} --format=json)
-echo ""
-echo $old
-echo ""
-new=$(php -r "
-\$option = json_decode( '$old' );
-\$option->${option_key} = \"${option_value}\";
-print json_encode(\$option);
-")
-
-echo ""
-echo $new
-echo ""
-
-read -p "Apply changes? [y/N] " yn
-case $yn in
-    [Yy]* ) $kc exec $pod -- wp option set ${option_name} $new --format=json ;;
-    * ) echo "Skipping... " ;;
-esac
+$kc exec $pod -- wp option patch update $option_name $option_key $option_value
