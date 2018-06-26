@@ -53,18 +53,19 @@ esac
 echo ""
 echo "============================================================================="
 echo ""
+oldpath=${OLD_PATH:-defaultcontent}
 path=$($kc get pod $pod -o yaml | grep -A 1 APP_HOSTPATH | grep value | cut -d: -f 2 | xargs)
 echo "Replacing path references:"
-echo "Old path:       /defaultcontent"
+echo "Old path:       /$oldpath"
 echo "New path:       /$path"
 echo ""
 
-$kc exec $pod -- wp search-replace 'defaultcontent' $path --dry-run --precise --skip-columns=guid
+$kc exec $pod -- wp search-replace $oldpath $path --dry-run --precise --skip-columns=guid
 echo ""
 read -p "Apply path changes? [y/N] " yn
 echo ""
 case $yn in
-    [Yy]* ) $kc exec $pod -- wp search-replace 'defaultcontent' $path --precise --skip-columns=guid ;;
+    [Yy]* ) $kc exec $pod -- wp search-replace $oldpath $path --precise --skip-columns=guid ;;
     * ) echo "Skipping... " ;;
 esac
 
