@@ -4,7 +4,7 @@ set -eu
 release=$1
 
 namespace=$(echo $release | cut -d- -f2)
-if ! kubectl get namespace $namespace
+if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."
   exit 1
