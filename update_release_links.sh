@@ -183,13 +183,4 @@ esac
 #
 # Flush redis cache
 #
-echo ""
-echo "============================================================================="
-echo ""
-redis=$(helm status $release | grep redis | grep Running | cut -d' ' -f1)
-read -p "Flush redis cache? [y/N] " yn
-echo ""
-case $yn in
-    [Yy]* ) $kc exec $redis -- redis-cli flushdb ;;
-    * ) echo "WARNING: Skipping redis flush, any changes may not be visible." ;;
-esac
+./flush_release_redis.sh $release
