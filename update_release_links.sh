@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
-RELEASE_DOMAIN=release.k8s.p4.greenpeace.org
-MASTER_DOMAIN=master.k8s.p4.greenpeace.org
-PRODUCTION_DOMAIN=www.greenpeace.org
+DEVELOP_DOMAIN=https://k8s.p4.greenpeace.org
+RELEASE_DOMAIN=https://release.k8s.p4.greenpeace.org
+MASTER_DOMAIN=https://master.k8s.p4.greenpeace.org
+PRODUCTION_DOMAIN=https://www.greenpeace.org
 
 #
 # Pass release in as the first argument
@@ -69,26 +70,34 @@ case $yn in
     * ) echo "Skipping... " ;;
 esac
 
+function wp_search_replace {
+    search=$1
+    replace=$2
+
+    echo ""
+    echo "============================================================================="
+    echo ""
+
+    $kc exec $pod -- wp search-replace $search $replace --dry-run --precise --skip-columns=guid
+
+    echo ""
+    echo "Search:     $search"
+    echo "Replace:    $replace"
+    echo ""
+
+    read -p "Apply domain changes? [y/N] " yn
+    case $yn in
+        [Yy]* ) $kc exec -ti $pod -- wp search-replace $search $replace --precise --skip-columns=guid ;;
+        * ) echo "Skipping... " ;;
+    esac
+}
+
 # =============================================================================
 #
 # Replace all instances of master.k8s.p4.greenpeace.org with new domain
 #
 function do_release_domain {
-  echo ""
-  echo "============================================================================="
-  echo ""
-  domain=$RELEASE_DOMAIN
-  echo "Domain:     $domain"
-
-  $kc exec $pod -- wp search-replace 'https://k8s.p4.greenpeace.org' "https://$domain" --dry-run --precise --skip-columns=guid
-  echo ""
-  read -p "Apply domain changes? [y/N] " yn
-  echo ""
-  case $yn in
-      [Yy]* ) $kc exec -ti $pod -- wp search-replace 'https://k8s.p4.greenpeace.org' "https://$domain" --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
-
+  wp_search_replace $DEVELOP_DOMAIN $RELEASE_DOMAIN
 }
 
 # =============================================================================
@@ -96,27 +105,8 @@ function do_release_domain {
 # Replace all instances of [release.]k8s.p4.greenpeace.org with new domain
 #
 function do_master_domain {
-  echo ""
-  echo "============================================================================="
-  echo ""
-  domain=$MASTER_DOMAIN
-  echo "Domain:     $domain"
-
-  $kc exec $pod -- wp search-replace 'https://k8s.p4.greenpeace.org' "https://$domain" --dry-run --precise --skip-columns=guid
-
-  read -p "Apply domain changes? [y/N] " yn
-  case $yn in
-      [Yy]* ) $kc exec -ti $pod -- wp search-replace 'https://k8s.p4.greenpeace.org' "https://$domain" --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
-
-  $kc exec $pod -- wp search-replace 'https://release.k8s.p4.greenpeace.org' "https://$domain" --dry-run --precise --skip-columns=guid
-
-  read -p "Apply domain changes? [y/N] " yn
-  case $yn in
-      [Yy]* ) $kc exec -ti $pod -- wp search-replace 'https://release.k8s.p4.greenpeace.org' "https://$domain" --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
+  wp_search_replace $DEVELOP_DOMAIN $MASTER_DOMAIN
+  wp_search_replace $RELEASE_DOMAIN $MASTER_DOMAIN
 }
 
 # =============================================================================
@@ -124,35 +114,9 @@ function do_master_domain {
 # Replace all instances of [release.|master.]k8s.p4.greenpeace.org with new domain
 #
 function do_production_domain {
-  echo ""
-  echo "============================================================================="
-  echo ""
-  domain=$PRODUCTION_DOMAIN
-  echo "Domain:     $domain"
-
-  $kc exec $pod -- wp search-replace 'https://k8s.p4.greenpeace.org' "https://$domain" --dry-run --precise --skip-columns=guid
-
-  read -p "Apply domain changes? [y/N] " yn
-  case $yn in
-      [Yy]* ) $kc exec -ti $pod -- wp search-replace 'https://k8s.p4.greenpeace.org' "https://$domain" --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
-
-  $kc exec $pod -- wp search-replace 'https://release.k8s.p4.greenpeace.org' "https://$domain" --dry-run --precise --skip-columns=guid
-
-  read -p "Apply domain changes? [y/N] " yn
-  case $yn in
-      [Yy]* ) $kc exec -ti $pod -- wp search-replace 'https://release.k8s.p4.greenpeace.org' "https://$domain" --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
-
-  $kc exec $pod -- wp search-replace 'https://master.k8s.p4.greenpeace.org' "https://$domain" --dry-run --precise --skip-columns=guid
-
-  read -p "Apply domain changes? [y/N] " yn
-  case $yn in
-      [Yy]* ) $kc exec -ti $pod -- wp search-replace 'https://master.k8s.p4.greenpeace.org' "https://$domain" --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
+  wp_search_replace $DEVELOP_DOMAIN $PRODUCTION_DOMAIN
+  wp_search_replace $RELEASE_DOMAIN $PRODUCTION_DOMAIN
+  wp_search_replace $MASTER_DOMAIN $PRODUCTION_DOMAIN
 }
 
 # =============================================================================
