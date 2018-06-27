@@ -26,9 +26,16 @@ echo ""
 redis=$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)
 echo "Pod:        $redis"
 echo ""
-read -p "Flush redis cache? [y/N] " yn
-echo ""
-case $yn in
-    [Yy]* ) $kc exec $redis -- redis-cli flushdb ;;
-    * ) echo "WARNING: Skipping redis flush, any changes may not be visible." ;;
-esac
+
+# Check if interactive
+if tty -s
+then
+  read -p "Flush redis cache? [y/N] " yn
+  echo ""
+  case $yn in
+      [Yy]* ) $kc exec $redis -- redis-cli flushdb ;;
+      * ) echo "WARNING: Skipping redis flush, any changes may not be visible." ;;
+  esac
+else
+  $kc exec $redis -- redis-cli flushdb
+fi
