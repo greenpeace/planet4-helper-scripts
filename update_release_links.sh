@@ -105,8 +105,9 @@ function do_release_domain {
 # Replace all instances of [release.]k8s.p4.greenpeace.org with new domain
 #
 function do_master_domain {
-  wp_search_replace $DEVELOP_DOMAIN $MASTER_DOMAIN
   wp_search_replace $RELEASE_DOMAIN $MASTER_DOMAIN
+  wp_search_replace $DEVELOP_DOMAIN $MASTER_DOMAIN
+
 }
 
 # =============================================================================
@@ -114,9 +115,10 @@ function do_master_domain {
 # Replace all instances of [release.|master.]k8s.p4.greenpeace.org with new domain
 #
 function do_production_domain {
-  wp_search_replace $DEVELOP_DOMAIN $PRODUCTION_DOMAIN
   wp_search_replace $RELEASE_DOMAIN $PRODUCTION_DOMAIN
   wp_search_replace $MASTER_DOMAIN $PRODUCTION_DOMAIN
+  wp_search_replace $DEVELOP_DOMAIN $PRODUCTION_DOMAIN
+
 }
 
 # =============================================================================
