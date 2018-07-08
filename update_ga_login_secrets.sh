@@ -47,7 +47,7 @@ then
   echo
 else
   # Read base64 encoded var from environment
-  GA_CLIENT_ID=$(base64 -d <<< $GA_CLIENT_ID)
+  GA_CLIENT_ID=$(echo $GA_CLIENT_ID | openssl base64 -a -A -d | tr -d '\n')
 fi
 
 if [[ -z "$GA_CLIENT_SECRET" ]]
@@ -56,7 +56,7 @@ then
   echo
 else
   # Read base64 encoded var from environment
-  GA_CLIENT_SECRET=$(base64 -d <<< $GA_CLIENT_SECRET)
+  GA_CLIENT_SECRET=$(echo $GA_CLIENT_SECRET | openssl base64 -a -A -d | tr -d '\n')
 fi
 
 ./update_release_wp_array_option.sh $release galogin ga_clientid $GA_CLIENT_ID
