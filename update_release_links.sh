@@ -61,12 +61,12 @@ echo "Old path:       /$oldpath"
 echo "New path:       /$path"
 echo ""
 
-$kc exec $pod -- wp search-replace $oldpath $path --dry-run --precise --skip-columns=guid
+$kc exec $pod -- wp search-replace $oldpath $path --dry-run --all-tables --precise --skip-columns=guid
 echo ""
 read -p "Apply path changes? [y/N] " yn
 echo ""
 case $yn in
-    [Yy]* ) $kc exec $pod -- wp search-replace $oldpath $path --precise --skip-columns=guid ;;
+    [Yy]* ) $kc exec $pod -- wp search-replace $oldpath $path --all-tables --precise --skip-columns=guid ;;
     * ) echo "Skipping... " ;;
 esac
 
@@ -78,7 +78,7 @@ function wp_search_replace {
     echo "============================================================================="
     echo ""
 
-    $kc exec $pod -- wp search-replace $search $replace --dry-run --precise --skip-columns=guid
+    $kc exec $pod -- wp search-replace "$search" "$replace" --dry-run --all-tables --precise --skip-columns=guid
 
     echo ""
     echo "Search:     $search"
@@ -87,7 +87,7 @@ function wp_search_replace {
 
     read -p "Apply domain changes? [y/N] " yn
     case $yn in
-        [Yy]* ) $kc exec -ti $pod -- wp search-replace $search $replace --precise --skip-columns=guid ;;
+        [Yy]* ) $kc exec -ti $pod -- wp search-replace "$search" "$replace" --all-tables --precise --skip-columns=guid ;;
         * ) echo "Skipping... " ;;
     esac
 }
