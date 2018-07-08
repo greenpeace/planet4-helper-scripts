@@ -1,0 +1,15 @@
+UPDATE wp_options SET option_value = replace(option_value, 'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}', 'https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}') WHERE option_name = 'home' OR option_name = 'siteurl';
+
+UPDATE wp_posts SET guid = replace(guid, 'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}','https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}');
+
+UPDATE wp_posts SET post_content = replace(post_content, 'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}', 'https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}');
+
+UPDATE wp_postmeta SET meta_value = replace(meta_value,'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}','https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}');
+
+UPDATE wp_options SET option_value = replace(option_value, 'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}', 'https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}') WHERE option_name = 'home' OR option_name = 'siteurl';
+
+UPDATE wp_posts SET guid = replace(guid, 'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}','https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}');
+
+UPDATE wp_posts SET post_content = replace(post_content, 'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}', 'https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}');
+
+UPDATE wp_postmeta SET meta_value = replace(meta_value,'https://{{ .Env.OLD_DOMAIN }}/{{ .Env.SITE_PATH }}','https://{{ .Env.NEW_DOMAIN }}/{{ .Env.SITE_PATH }}');
