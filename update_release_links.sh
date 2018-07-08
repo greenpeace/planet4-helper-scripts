@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
-DEVELOP_DOMAIN=https://k8s.p4.greenpeace.org
-RELEASE_DOMAIN=https://release.k8s.p4.greenpeace.org
-MASTER_DOMAIN=https://master.k8s.p4.greenpeace.org
-PRODUCTION_DOMAIN=https://www.greenpeace.org
+DEVELOP_DOMAIN=k8s.p4.greenpeace.org
+RELEASE_DOMAIN=release.k8s.p4.greenpeace.org
+MASTER_DOMAIN=master.k8s.p4.greenpeace.org
+PRODUCTION_DOMAIN=www.greenpeace.org
 
 #
 # Pass release in as the first argument
@@ -90,6 +90,22 @@ function wp_search_replace {
         [Yy]* ) $kc exec -ti $pod -- wp search-replace "$search" "$replace" --all-tables --precise --skip-columns=guid ;;
         * ) echo "Skipping... " ;;
     esac
+
+    OLD_DOMAIN=$search \
+    NEW_DOMAIN=$replace \
+    SITE_PATH=$path \
+    dockerize -template new.sql.tmpl:new.sql
+
+    echo
+    cat new.sql
+    echo
+
+    read -p "Apply SQL? [y/N] " yn
+    case $yn in
+        [Yy]* ) $kc cp new.sql $pod:new.sql; $kc exec -ti $pod -- wp db import new.sql ;;
+        * ) echo "Skipping... " ;;
+    esac
+
 }
 
 # =============================================================================
