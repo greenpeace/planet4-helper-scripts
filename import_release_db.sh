@@ -29,14 +29,14 @@ then
 fi
 echo "File:       $file"
 
+echo "Copying $file to $pod:import.sql ..."
+$kc cp $file $pod:import.sql
+
 read -p "Reset existing database? [y/N] " yn
 case $yn in
     [Yy]* ) $kc exec $pod -- wp db reset --yes ;;
     * ) echo "Skipping... " ;;
 esac
-
-echo "Copying $file to $pod:import.sql ..."
-$kc cp $file $pod:import.sql
 
 $kc exec $pod -- wp db import import.sql
 
