@@ -57,8 +57,8 @@ echo ""
 oldpath=${OLD_PATH:-defaultcontent}
 path=$($kc get pod $pod -o yaml | grep -A 1 APP_HOSTPATH | grep value | cut -d: -f 2 | xargs)
 echo "Replacing path references:"
-echo "Old path:       /$oldpath"
-echo "New path:       /$path"
+echo "Old path:       $oldpath"
+echo "New path:       $path"
 echo ""
 
 $kc exec $pod -- wp search-replace $oldpath $path --dry-run --all-tables --precise --skip-columns=guid
