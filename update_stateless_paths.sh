@@ -89,4 +89,4 @@ echo ""
 echo "============================================================================="
 echo ""
 
-./flush_release_redis.sh $release
+./flush_release_redis.sh $release $namespace
