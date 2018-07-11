@@ -15,7 +15,7 @@ echo "Release:    $release"
 #
 # Determine namespace from release
 #
-namespace=${2:-$(helm status $release | grep NAMESPACE: | cut -d: -f2 | xargs)}
+namespace=${2:-$(./get-namespace.sh $release)}
 if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."

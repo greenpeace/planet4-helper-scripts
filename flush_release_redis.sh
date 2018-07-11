@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -eu
 
+echo ""
+echo "============================================================================="
+echo ""
+
 release=$1
 echo "Release:    $release"
 
-namespace=${2:-$(helm status $release | grep NAMESPACE: | cut -d: -f2 | xargs)}
+namespace=${2:-$(./get-namespace.sh $release)}
 
 if ! kubectl get namespace $namespace > /dev/null
 then
@@ -18,9 +22,6 @@ echo "Namespace:  $namespace"
 #
 kc="kubectl -n $namespace"
 
-echo ""
-echo "============================================================================="
-echo ""
 redis=$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)
 echo "Redis:      $redis"
 echo ""

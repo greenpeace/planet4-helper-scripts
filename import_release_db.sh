@@ -7,7 +7,7 @@ echo "Release:    $release"
 db=$2
 echo "Database:   $db"
 
-namespace=$(echo $release | cut -d- -f2)
+namespace=$(./get-namespace.sh $release)
 if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."
