@@ -16,7 +16,7 @@ option_value=$4
 #
 # Determine namespace from release
 #
-namespace=$(./get-namespace.sh $release)
+namespace=$(./get_namespace.sh $release)
 if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."
