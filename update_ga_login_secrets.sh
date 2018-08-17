@@ -4,7 +4,7 @@ set -eu
 function usage {
   echo "Usage:
 
-  $(basename "$0") <planet4-release-name>
+  $(basename "$0") <planet4-release-name> [<helm-namespace> <redis-pod>]
 
 Example:
 
@@ -32,6 +32,18 @@ then
 fi
 
 release=$1
+#
+# Determine namespace from release
+#
+namespace=${2:-$(./get_namespace.sh $release)}
+if ! kubectl get namespace $namespace > /dev/null
+then
+  echo "ERROR: Namespace '$namespace' not found."
+  exit 1
+fi
+echo "Namespace:  $namespace"
+
+redis=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
 
 # Check if interactive
 if ! tty -s
@@ -59,7 +71,7 @@ else
   GA_CLIENT_SECRET=$(echo $GA_CLIENT_SECRET | openssl base64 -a -A -d | tr -d '\n')
 fi
 
-./update_release_wp_array_option.sh $release galogin ga_clientid $GA_CLIENT_ID
-./update_release_wp_array_option.sh $release galogin ga_clientsecret $GA_CLIENT_SECRET
+./update_release_wp_array_option.sh $release $namespace galogin ga_clientid $GA_CLIENT_ID
+./update_release_wp_array_option.sh $release $namespace galogin ga_clientsecret $GA_CLIENT_SECRET
 
-./flush_release_redis.sh $release
+./flush_release_redis.sh $release $namespace $redis

@@ -9,14 +9,14 @@ set -euo pipefail
 release=$1
 echo "Release:    $release"
 
-option_name=$2
-option_key=$3
-option_value=$4
+option_name=$3
+option_key=$4
+option_value=$5
 
 #
 # Determine namespace from release
 #
-namespace=$(./get_namespace.sh $release)
+namespace=${2:-$(./get_namespace.sh $release)}
 if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."

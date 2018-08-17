@@ -25,8 +25,11 @@ then
 fi
 
 release=$1
-redis_servicename=${2:-$(helm status $release | grep Service -A 10 | grep redis | head -n1 | cut -d' ' -f1)}
+namespace=$2
+redis_pod=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
 
-./update_release_wp_array_option.sh $release rt_wp_nginx_helper_options redis_hostname $redis_servicename
+redis_servicename=$(helm status $release | grep Service -A 10 | grep redis | head -n1 | cut -d' ' -f1)
 
-./flush_release_redis.sh $release
+./update_release_wp_array_option.sh $release $namespace rt_wp_nginx_helper_options redis_hostname $redis_servicename
+
+./flush_release_redis.sh $release $namespace $redis_pod

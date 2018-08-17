@@ -28,6 +28,9 @@ echo "Namespace:  $namespace"
 #
 kc="kubectl -n $namespace"
 
+redis=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
+
+
 #
 # Find the first php pod in the release
 #
@@ -41,10 +44,10 @@ echo "Pod:        $pod"
 echo ""
 echo "========================================================================="
 echo ""
-read -p "Backup database for $release? [y/N] " yn
+read -p "Backup database for $release? [Y/n] " yn
 case $yn in
-    [Yy]* ) ./backup_release_db.sh $release ;;
-    * ) : ;;
+    [Nn]* ) : ;;
+    * ) ./backup_release_db.sh $release ;;
 esac
 
 # =============================================================================
@@ -166,4 +169,4 @@ esac
 #
 # Flush redis cache
 #
-./flush_release_redis.sh $release $namespace
+./flush_release_redis.sh $release $namespace $redis
