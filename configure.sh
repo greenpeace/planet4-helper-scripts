@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -eu
 
+echo " > helm ls"
+echo
+helm ls
+echo
+echo "---"
+echo
 release=${1:-}
 if [[ -z "$release" ]]
 then
@@ -55,12 +61,6 @@ then
   echo
 fi
 
-echo
-echo "---"
-echo
-echo " > helm ls"
-echo
-helm ls
 echo
 echo "---"
 echo
