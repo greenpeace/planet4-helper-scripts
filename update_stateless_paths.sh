@@ -20,7 +20,7 @@ if [[ -z "${1:-}" ]]
 then
   >&2 echo "Error: Release name not set"
   >&2 echo
-  usage
+  >&2 usage
   exit 1
 fi
 
