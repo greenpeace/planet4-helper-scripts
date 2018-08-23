@@ -1,4 +1,6 @@
 *.sql
+*.json
+backup/
 HELM_RELEASE
 HELM_NAMESPACE
 REDIS_SERVICE
