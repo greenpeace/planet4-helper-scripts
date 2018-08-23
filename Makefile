@@ -26,6 +26,7 @@ endif
 all: nginx-helper ga-login release-links
 
 clean:
+	rm new.sql
 	rm HELM_RELEASE HELM_NAMESPACE REDIS_SERVICE GA_CLIENT_ID GA_CLIENT_SECRET
 
 nginx-helper:
