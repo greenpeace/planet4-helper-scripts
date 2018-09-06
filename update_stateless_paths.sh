@@ -63,13 +63,30 @@ esac
 
 # =============================================================================
 #
-# Replace all instances of defaultcontent with new path
+# Replace all instances of defaultcontent (or any other bucket) with new path
 #
 echo ""
 echo "============================================================================="
 echo ""
 oldpath=${OLD_PATH:-planet4-defaultcontent-stateless-develop}
 path=$($kc get pod $pod -o yaml | grep -A 1 WP_STATELESS_MEDIA_BUCKET | grep value | cut -d: -f 2 | xargs)
+vmsdirectory=${VMS_DIRECTORY:-international/wp-content/uploads/}
+
+echo "Replacing image urls references (for VMs->k8s migrations):"
+echo "Old full directory:       /$oldpath$vmsdirectory"
+echo "New directory:       /$path"
+echo ""
+
+$kc exec $pod -- wp search-replace $oldpath$vmsdirectory $path --dry-run --precise --skip-columns=guid
+
+echo ""
+read -p "Apply path changes? [y/N] " yn
+echo ""
+case $yn in
+    [Yy]* ) $kc exec $pod -- wp search-replace $oldpath$vmsdirectory $path --precise --skip-columns=guid ;;
+    * ) echo "Skipping... " ;;
+esac
+
 echo "Replacing path references:"
 echo "Old path:       /$oldpath"
 echo "New path:       /$path"
