@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -eu
 
+echo
 echo " > helm ls"
 echo
 helm ls
 echo
 echo "---"
 echo
+
 release=${1:-}
 if [[ -z "$release" ]]
 then
