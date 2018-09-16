@@ -43,8 +43,6 @@ then
 fi
 echo "Namespace:  $namespace"
 
-redis=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
-
 # Check if interactive
 if ! tty -s
 then
@@ -73,5 +71,3 @@ fi
 
 ./update_release_wp_array_option.sh $release $namespace galogin ga_clientid $GA_CLIENT_ID
 ./update_release_wp_array_option.sh $release $namespace galogin ga_clientsecret $GA_CLIENT_SECRET
-
-./flush_release_redis.sh $release $namespace $redis

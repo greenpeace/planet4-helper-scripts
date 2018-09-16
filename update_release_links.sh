@@ -164,9 +164,3 @@ case $release_type in
   3 ) do_production_domain ;;
   * ) echo "Skipping domain changes..." ;;
 esac
-
-# =============================================================================
-#
-# Flush redis cache
-#
-./flush_release_redis.sh $release $namespace $redis
