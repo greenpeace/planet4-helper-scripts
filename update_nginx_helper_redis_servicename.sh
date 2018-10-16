@@ -27,6 +27,6 @@ fi
 release=$1
 namespace=$2
 
-redis_servicename=$(helm status $release | grep Service -A 10 | grep redis | head -n1 | cut -d' ' -f1)
+redis_servicename=$(helm status $release | grep Service -A 10 | grep redis-master | head -n1 | cut -d' ' -f1)
 
 ./update_release_wp_array_option.sh $release $namespace rt_wp_nginx_helper_options redis_hostname $redis_servicename
