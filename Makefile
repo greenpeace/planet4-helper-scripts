@@ -23,14 +23,14 @@ ifeq ($(strip $(GA_CLIENT_SECRET)),)
 $(error Google Apps Login ClientID not set, please run ./configure.sh)
 endif
 
-all: nginx-helper ga-login update-links flush-redis
+all: ga-login update-links flush-redis
 
 clean:
 	rm new.sql
 	rm HELM_RELEASE HELM_NAMESPACE REDIS_SERVICE GA_CLIENT_ID GA_CLIENT_SECRET
 
-nginx-helper:
-	./update_nginx_helper_redis_servicename.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)
+# nginx-helper:
+# 	./update_nginx_helper_redis_servicename.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)
 
 ga-login:
 	@echo "./update_ga_login_secrets.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)"
