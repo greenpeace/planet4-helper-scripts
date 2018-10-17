@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -eu
 
+release=${1:-}
+
 echo
 echo " > helm ls"
 echo
-helm ls
+[[ -z "$release" ]] && helm ls
 echo
 echo "---"
 echo
 
-release=${1:-}
 if [[ -z "$release" ]]
 then
   read -p "Enter Helm release: " release
