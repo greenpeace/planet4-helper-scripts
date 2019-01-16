@@ -28,9 +28,6 @@ echo "Namespace:  $namespace"
 #
 kc="kubectl -n $namespace"
 
-redis=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
-
-
 #
 # Find the first php pod in the release
 #
