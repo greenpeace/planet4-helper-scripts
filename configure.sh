@@ -3,10 +3,14 @@ set -eu
 
 release=${1:-}
 
-echo
-echo " > helm ls"
-echo
-[[ -z "$release" ]] && helm ls
+[[ -z "$release" ]] && {
+
+  echo
+  echo " > helm ls"
+  echo
+  helm ls
+}
+
 echo
 echo "---"
 echo
