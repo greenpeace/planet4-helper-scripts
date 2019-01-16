@@ -31,7 +31,12 @@ kc="kubectl -n $namespace"
 #
 # Find the first php pod in the release
 #
-pod=$($kc get pods -l component=php | grep $release | head -n1 | cut -d' ' -f1)
+pod=$($kc get pods \
+    --sort-by=.metadata.creationTimestamp \
+    --field-selector=status.phase=Running \
+    -l "app=wordpress-php,release=${release}" \
+    -o jsonpath="{.items[-1:].metadata.name}")
+
 echo "Pod:        $pod"
 
 # =============================================================================
