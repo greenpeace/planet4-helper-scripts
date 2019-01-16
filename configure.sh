@@ -32,7 +32,10 @@ fi
 #
 # Determine redis pod name
 #
-redis=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
+redis=${3:-$(kubectl get pods --namespace "${namespace}" \
+    --field-selector=status.phase=Running \
+    -l "app=redis,role=master,release=${release}" \
+    -o jsonpath="{.items[0].metadata.name}")}
 
 if ! kubectl -n $namespace get pod $redis > /dev/null
 then
