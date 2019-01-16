@@ -15,8 +15,8 @@ echo "Release:    $release"
 #
 # Determine namespace from release
 #
-namespace=${2:-$(./get_namespace.sh $release)}
-if ! kubectl get namespace $namespace > /dev/null
+namespace=${2:-$(./get_namespace.sh "$release")}
+if ! kubectl get namespace "$namespace" > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."
   exit 1
@@ -46,10 +46,10 @@ echo "Pod:        $pod"
 echo ""
 echo "========================================================================="
 echo ""
-read -p "Backup database for $release? [Y/n] " yn
+read -rp "Backup database for $release? [Y/n] " yn
 case $yn in
     [Nn]* ) : ;;
-    * ) ./backup_release_db.sh $release ;;
+    * ) ./backup_release_db.sh "$release" ;;
 esac
 
 # =============================================================================
@@ -60,18 +60,18 @@ echo ""
 echo "============================================================================="
 echo ""
 oldpath=${OLD_PATH:-defaultcontent}
-path=$($kc get pod $pod -o yaml | grep -A 1 APP_HOSTPATH | grep value | cut -d: -f 2 | xargs)
+path=$($kc get pod "$pod" -o yaml | grep -A 1 APP_HOSTPATH | grep value | cut -d: -f 2 | xargs)
 echo "Replacing path references:"
-echo "Old path:       $oldpath"
-echo "New path:       $path"
+echo "Old path:       '$oldpath'"
+echo "New path:       '$path'"
 echo ""
 
-$kc exec $pod -- wp search-replace $oldpath $path --dry-run --all-tables --precise --skip-columns=guid
+$kc exec "$pod" -- wp search-replace "$oldpath" "$path" --dry-run --all-tables --precise --skip-columns=guid
 echo ""
-read -p "Apply path changes? [y/N] " yn
+read -rp "Apply path changes? [y/N] " yn
 echo ""
 case $yn in
-    [Yy]* ) $kc exec $pod -- wp search-replace $oldpath $path --all-tables --precise --skip-columns=guid ;;
+    [Yy]* ) $kc exec "$pod" -- wp search-replace "$oldpath" "$path" --all-tables --precise --skip-columns=guid ;;
     * ) echo "Skipping... " ;;
 esac
 
@@ -83,16 +83,16 @@ function wp_search_replace {
     echo "============================================================================="
     echo ""
 
-    $kc exec $pod -- wp search-replace "$search" "$replace" --dry-run --all-tables --precise --skip-columns=guid
+    $kc exec "$pod" -- wp search-replace "$search" "$replace" --dry-run --all-tables --precise --skip-columns=guid
 
     echo ""
     echo "Search:     $search"
     echo "Replace:    $replace"
     echo ""
 
-    read -p "Apply domain changes? [y/N] " yn
+    read -rp "Apply domain changes? [y/N] " yn
     case $yn in
-        [Yy]* ) $kc exec -ti $pod -- wp search-replace "$search" "$replace" --all-tables --precise --skip-columns=guid ;;
+        [Yy]* ) $kc exec -ti "$pod" -- wp search-replace "$search" "$replace" --all-tables --precise --skip-columns=guid ;;
         * ) echo "Skipping... " ;;
     esac
 
@@ -105,9 +105,9 @@ function wp_search_replace {
     cat new.sql
     echo
 
-    read -p "Apply SQL? [y/N] " yn
+    read -rp "Apply SQL? [y/N] " yn
     case $yn in
-        [Yy]* ) $kc cp new.sql $pod:new.sql; $kc exec -ti $pod -- wp db import new.sql ;;
+        [Yy]* ) $kc cp new.sql "$pod:new.sql"; $kc exec -ti "$pod" -- wp db import new.sql ;;
         * ) echo "Skipping... " ;;
     esac
 
@@ -128,7 +128,6 @@ function do_release_domain {
 function do_master_domain {
   wp_search_replace $RELEASE_DOMAIN $MASTER_DOMAIN
   wp_search_replace $DEVELOP_DOMAIN $MASTER_DOMAIN
-
 }
 
 # =============================================================================
