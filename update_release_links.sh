@@ -139,8 +139,42 @@ function do_production_domain {
   wp_search_replace $RELEASE_DOMAIN $PRODUCTION_DOMAIN
   wp_search_replace $MASTER_DOMAIN $PRODUCTION_DOMAIN
   wp_search_replace $DEVELOP_DOMAIN $PRODUCTION_DOMAIN
-
 }
+
+# =============================================================================
+#
+# Replace all instances of [release.|master.]k8s.p4.greenpeace.org with new domain
+#
+function do_custom_domain {
+
+  new_domain=${1:-}
+  if [[ -z "$new_domain" ]]
+  then
+    read -rp "Enter new domain: " new_domain
+  fi
+
+  # Remove any leading protocol string
+  new_domain=${new_domain%"http://"}
+  new_domain=${new_domain%"https://"}
+
+  wp_search_replace $RELEASE_DOMAIN "$new_domain"
+  wp_search_replace $MASTER_DOMAIN "$new_domain"
+  wp_search_replace $DEVELOP_DOMAIN "$new_domain"
+}
+
+# =============================================================================
+#
+# Choose which type of domain replacement to perform
+#
+echo ""
+echo "============================================================================="
+echo ""
+new_domain=$($kc describe pod "$pod" | grep APP_HOSTNAME | cut -d: -f2 | xargs)
+read -rp "Update DB domain to: $new_domain [y/N] ? " automated_domain
+case $automated_domain in
+  y ) do_custom_domain "$new_domain" && exit 0 ;;
+  * ) : ;;
+esac
 
 # =============================================================================
 #
@@ -152,17 +186,20 @@ echo ""
 echo "Select new domain:"
 echo ""
 echo " 1 - Release domain
-     (replaces https://k8s.p4.greenpeace.org with https://release.k8s.p4.greenpeace.org)"
+     (replaces https://k8s.p4.greenpeace.org with ${RELEASE_DOMAIN})"
 echo " 2 - Master domain
-     (replaces https://[release.]k8s.p4.greenpeace.org with https://master.k8s.p4.greenpeace.org)"
+     (replaces https://[release.]k8s.p4.greenpeace.org with ${MASTER_DOMAIN})"
 echo " 3 - Production domain
-     (replaces https://[release|master.]k8s.p4.greenpeace.org with https://www.greenpeace.org)"
+     (replaces https://[release|master.]k8s.p4.greenpeace.org with ${PRODUCTION_DOMAIN})"
+echo " 4 - Custom domain
+     (replaces https://[release|master.]k8s.p4.greenpeace.org with custom domain)"
 echo ""
-read -p "Release type? [1/2/3] " release_type
+read -rp "Release type? [1/2/3/4] " release_type
 echo ""
 case $release_type in
   1 ) do_release_domain ;;
   2 ) do_master_domain ;;
   3 ) do_production_domain ;;
+  4 ) do_custom_domain ;;
   * ) echo "Skipping domain changes..." ;;
 esac
