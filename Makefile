@@ -11,6 +11,11 @@ GA_CLIENT_SECRET ?= $(shell cat GA_CLIENT_SECRET 2>/dev/null)
 
 all: ga-login update-links flush-redis
 
+lint: lint-sh
+
+lint-sh:
+	find . -type f -name '*.sh' | xargs shellcheck
+
 clean:
 	rm new.sql
 	rm HELM_RELEASE HELM_NAMESPACE REDIS_SERVICE GA_CLIENT_ID GA_CLIENT_SECRET
