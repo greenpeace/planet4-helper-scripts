@@ -9,16 +9,12 @@ release=${1:-}
   echo " > helm ls"
   echo
   helm ls
+  echo
+  echo "---"
+  echo
+  read -rp "Enter Helm release: " release
 }
 
-echo
-echo "---"
-echo
-
-if [[ -z "$release" ]]
-then
-  read -rp "Enter Helm release: " release
-fi
 if ! helm status "$release"
 then
   echo "ERROR: Release '$release' not found."

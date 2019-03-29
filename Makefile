@@ -9,7 +9,8 @@ REDIS_SERVICE ?= $(shell cat REDIS_SERVICE 2>/dev/null)
 GA_CLIENT_ID ?= $(shell cat GA_CLIENT_ID 2>/dev/null)
 GA_CLIENT_SECRET ?= $(shell cat GA_CLIENT_SECRET 2>/dev/null)
 
-all: ga-login update-links flush-redis
+# all: lint ga-login update-links flush-redis
+all: ga-login update-links flush
 
 lint: lint-sh
 
@@ -39,6 +40,6 @@ ga-login: check-all-vars
 update-links: check-helm-vars
 	./update_release_links.sh
 
-flush-redis:
+flush:
 	@test -n "$(REDIS_SERVICE)" # $$REDIS_SERVICE
 	./flush_release_redis.sh

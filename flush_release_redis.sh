@@ -21,7 +21,11 @@ echo "Namespace:  $namespace"
 #
 kc="kubectl -n $namespace"
 
-redis=${3:-${REDIS_SERVICE:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}}
+redis=${3:-${REDIS_SERVICE:-$($kc get pods \
+    --sort-by=.metadata.creationTimestamp \
+    --field-selector=status.phase=Running \
+    -l "app=redis,release=${release}" \
+    -o jsonpath="{.items[-1:].metadata.name}")}}
 echo "Redis:      $redis"
 echo ""
 
@@ -31,9 +35,9 @@ then
   read -p "Flush redis cache? [y/N] " yn
   echo ""
   case $yn in
-      [Yy]* ) $kc exec $redis -- redis-cli flushdb ;;
+      [Yy]* ) $kc exec "$redis" -- redis-cli flushdb ;;
       * ) echo "WARNING: Skipping redis flush, any changes may not be visible." ;;
   esac
 else
-  $kc exec $redis -- redis-cli flushdb
+  $kc exec "$redis" -- redis-cli flushdb
 fi

@@ -4,9 +4,6 @@ set -euo pipefail
 release=$1
 echo "Release:    $release"
 
-db=$2
-echo "Database:   $db"
-
 namespace=$(./get_namespace.sh $release)
 if ! kubectl get namespace $namespace > /dev/null
 then
@@ -21,13 +18,16 @@ kc="kubectl -n $namespace"
 pod=$($kc get pods -l component=php | grep $release | head -n1 | cut -d' ' -f1)
 echo "Pod:        $pod"
 
-
-file=$3
-if [[ ! -f $file ]]
+file=$2
+if [[ ! -f "$file" ]]
 then
   >&2 echo "File not found: $file"
+  exit 1
 fi
 echo "File:       $file"
+
+db=${3:-$(kubectl get pod "$pod" -o yaml | grep -A 1 MYSQL_DATABASE | grep value | cut -d: -f 2 | xargs)}
+echo "Database:   $db"
 
 echo "Copying $file to $pod:import.sql ..."
 $kc cp $file $pod:import.sql
