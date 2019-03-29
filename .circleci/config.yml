@@ -1,0 +1,20 @@
+defaults: &defaults
+
+version: 2
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - run: sudo apt update && sudo apt install -y shellcheck
+      - run: make lint
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - lint:
+          filters:
+                branches:
+                  only: /.*/
