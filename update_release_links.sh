@@ -9,13 +9,13 @@ PRODUCTION_DOMAIN=www.greenpeace.org
 #
 # Pass release in as the first argument
 #
-release=$1
+release=${1:-${HELM_RELEASE}}
 echo "Release:    $release"
 
 #
 # Determine namespace from release
 #
-namespace=${2:-$(./get_namespace.sh "$release")}
+namespace=${2:-${HELM_NAMESPACE:-$(./get_namespace.sh $release)}}
 if ! kubectl get namespace "$namespace" > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."

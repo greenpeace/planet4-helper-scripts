@@ -4,7 +4,7 @@ set -eu
 function usage {
   echo "Usage:
 
-  $(basename "$0") <planet4-release-name> [<helm-namespace> <redis-pod>]
+  $(basename "$0") [<planet4-release-name>] [<helm-namespace>]
 
 Example:
 
@@ -23,19 +23,12 @@ them at the prompt. If the terminal is not interactive, an error will be shown.
 "
 }
 
-if [[ -z "${1:-}" ]]
-then
-  >&2 echo "Error: Release name not set"
-  >&2 echo
-  usage
-  exit 1
-fi
+release=${1:-${HELM_RELEASE}}
 
-release=$1
 #
 # Determine namespace from release
 #
-namespace=${2:-$(./get_namespace.sh $release)}
+namespace=${2:-${HELM_NAMESPACE:-$(./get_namespace.sh $release)}}
 if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."

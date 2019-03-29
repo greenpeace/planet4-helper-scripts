@@ -5,11 +5,10 @@ echo ""
 echo "============================================================================="
 echo ""
 
-release=$1
+release=${1:-${HELM_RELEASE}}
 echo "Release:    $release"
 
-namespace=${2:-$(./get_namespace.sh $release)}
-
+namespace=${2:-${HELM_NAMESPACE:-$(./get_namespace.sh $release)}}
 if ! kubectl get namespace $namespace > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."
@@ -22,7 +21,7 @@ echo "Namespace:  $namespace"
 #
 kc="kubectl -n $namespace"
 
-redis=${3:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}
+redis=${3:-${REDIS_SERVICE:-$(helm status $release | grep redis | grep Running | head -n1 | cut -d' ' -f1)}}
 echo "Redis:      $redis"
 echo ""
 
