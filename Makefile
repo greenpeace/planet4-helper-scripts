@@ -1,27 +1,13 @@
 SHELL := /bin/bash
 
-HELM_RELEASE ?= $(shell cat HELM_RELEASE)
-ifeq ($(strip $(HELM_RELEASE)),)
-$(error HELM_RELEASE not set, please run ./configure.sh)
-endif
-HELM_NAMESPACE ?= $(shell cat HELM_NAMESPACE)
-ifeq ($(strip $(HELM_NAMESPACE)),)
-$(error HELM_NAMESPACE not set, please run ./configure.sh)
-endif
-REDIS_SERVICE ?= $(shell cat REDIS_SERVICE)
-ifeq ($(strip $(REDIS_SERVICE)),)
-$(error REDIS_SERVICE service not set, please run ./configure.sh)
-endif
+.EXPORT_ALL_VARIABLES:
 
-GA_CLIENT_ID ?= $(shell cat GA_CLIENT_ID)
-GA_CLIENT_SECRET ?= $(shell cat GA_CLIENT_SECRET)
+HELM_RELEASE ?= $(shell cat HELM_RELEASE 2>/dev/null)
+HELM_NAMESPACE ?= $(shell cat HELM_NAMESPACE 2>/dev/null)
+REDIS_SERVICE ?= $(shell cat REDIS_SERVICE 2>/dev/null)
 
-ifeq ($(strip $(GA_CLIENT_ID)),)
-$(error Google Apps Login ClientID not set, please run ./configure.sh)
-endif
-ifeq ($(strip $(GA_CLIENT_SECRET)),)
-$(error Google Apps Login ClientID not set, please run ./configure.sh)
-endif
+GA_CLIENT_ID ?= $(shell cat GA_CLIENT_ID 2>/dev/null)
+GA_CLIENT_SECRET ?= $(shell cat GA_CLIENT_SECRET 2>/dev/null)
 
 all: ga-login update-links flush-redis
 
@@ -29,17 +15,25 @@ clean:
 	rm new.sql
 	rm HELM_RELEASE HELM_NAMESPACE REDIS_SERVICE GA_CLIENT_ID GA_CLIENT_SECRET
 
-# nginx-helper:
-# 	./update_nginx_helper_redis_servicename.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)
+check-all-vars: check-helm-vars check-oauth-vars
 
-ga-login:
-	@echo "./update_ga_login_secrets.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)"
-	@GA_CLIENT_ID=$(GA_CLIENT_ID) \
-	GA_CLIENT_SECRET=$(GA_CLIENT_SECRET) \
-	./update_ga_login_secrets.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)
+check-oauth-vars:
+	@test -n "$(GA_CLIENT_ID)" # $$GA_CLIENT_ID
+	@test -n "$(GA_CLIENT_SECRET)" # $$GA_CLIENT_SECRET
+	@echo "Oauth Client ID: $(GA_CLIENT_ID)"
 
-update-links:
-	./update_release_links.sh $(HELM_RELEASE) $(HELM_NAMESPACE) $(REDIS_SERVICE)
+check-helm-vars:
+	@test -n "$(HELM_RELEASE)" # $$HELM_RELEASE
+	@test -n "$(HELM_NAMESPACE)" # $$HELM_NAMESPACE
+	@echo "Release:   $(HELM_RELEASE)"
+	@echo "Namespace: $(HELM_NAMESPACE)"
+
+ga-login: check-all-vars
+	./update_ga_login_secrets.sh
+
+update-links: check-helm-vars
+	./update_release_links.sh
 
 flush-redis:
-	./flush_release_redis.sh $(HELM_RELEASE) $(HELM_NAMESPACE) 
+	@test -n "$(REDIS_SERVICE)" # $$REDIS_SERVICE
+	./flush_release_redis.sh
