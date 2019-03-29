@@ -52,73 +52,91 @@ case $yn in
     * ) ./backup_release_db.sh "$release" ;;
 esac
 
-# =============================================================================
-#
-# Replace all instances of defaultcontent with new path
-#
-echo ""
-echo "============================================================================="
-echo ""
-oldpath=${OLD_PATH:-defaultcontent}
-path=$($kc get pod "$pod" -o yaml | grep -A 1 APP_HOSTPATH | grep value | cut -d: -f 2 | xargs)
-echo "Replacing path references:"
-echo "Old path:       '$oldpath'"
-echo "New path:       '$path'"
-echo ""
-
-$kc exec "$pod" -- wp search-replace "$oldpath" "$path" --dry-run --all-tables --precise --skip-columns=guid
-echo ""
-read -rp "Apply path changes? [y/N] " yn
-echo ""
-case $yn in
-    [Yy]* ) $kc exec "$pod" -- wp search-replace "$oldpath" "$path" --all-tables --precise --skip-columns=guid ;;
-    * ) echo "Skipping... " ;;
-esac
-
-function wp_search_replace {
+function search_replace {
     search=$1
     replace=$2
+    path=${3:-$APP_HOSTPATH}
 
     echo ""
     echo "============================================================================="
     echo ""
 
-    $kc exec "$pod" -- wp search-replace "$search" "$replace" --dry-run --all-tables --precise --skip-columns=guid
+    wp_search_replace "$search" "$replace"
 
-    echo ""
-    echo "Search:     $search"
-    echo "Replace:    $replace"
-    echo ""
-
-    read -rp "Apply domain changes? [y/N] " yn
-    case $yn in
-        [Yy]* ) $kc exec -ti "$pod" -- wp search-replace "$search" "$replace" --all-tables --precise --skip-columns=guid ;;
-        * ) echo "Skipping... " ;;
-    esac
-
-    OLD_DOMAIN=$search \
-    NEW_DOMAIN=$replace \
-    SITE_PATH=$path \
-    dockerize -template new.sql.tmpl:new.sql
-
-    echo
-    cat new.sql
-    echo
-
-    read -rp "Apply SQL? [y/N] " yn
-    case $yn in
-        [Yy]* ) $kc cp new.sql "$pod:new.sql"; $kc exec -ti "$pod" -- wp db import new.sql ;;
-        * ) echo "Skipping... " ;;
-    esac
+    db_search_replace "$search" "$replace" "$path"
 
 }
+
+function wp_search_replace {
+  $kc exec "$pod" -- wp search-replace "$1" "$2" --dry-run --all-tables --precise --skip-columns=guid
+
+  echo ""
+  echo "Search:     $1"
+  echo "Replace:    $2"
+  echo ""
+
+  read -rp "Apply changes? [y/N] " yn
+  case $yn in
+      [Yy]* ) $kc exec -ti "$pod" -- wp search-replace "$1" "$2" --all-tables --precise --skip-columns=guid ;;
+      * ) echo "Skipping... " ;;
+  esac
+}
+
+function db_search_replace {
+  $kc exec "$pod" -- wp search-replace "$1" "$2" --dry-run --all-tables --precise --skip-columns=guid
+
+  echo ""
+  echo "Search:     $1"
+  echo "Replace:    $2"
+  echo ""
+
+  read -rp "Apply changes? [y/N] " yn
+  case $yn in
+      [Yy]* ) $kc exec -ti "$pod" -- wp search-replace "$1" "$2" --all-tables --precise --skip-columns=guid ;;
+      * ) echo "Skipping... " ;;
+  esac
+}
+
+# =============================================================================
+#
+# Update stateless bucket
+#
+echo ""
+echo "============================================================================="
+echo ""
+oldbucket=${OLD_BUCKET:-planet4-defaultcontent-stateless-develop}
+newbucket=$($kc get pod "$pod" -o yaml | grep -A 1 WP_STATELESS_MEDIA_BUCKET | grep value | cut -d: -f 2 | xargs)
+echo "Replacing bucket references:"
+echo "Old bucket:     '$oldbucket'"
+echo "New bucket:     '$newbucket'"
+echo ""
+
+wp_search_replace "$oldbucket" "$newbucket"
+
+# =============================================================================
+#
+# Replace defaultcontent with new path
+#
+echo ""
+echo "============================================================================="
+echo ""
+oldpath=${OLD_PATH:-defaultcontent}
+APP_HOSTPATH=$($kc get pod "$pod" -o yaml | grep -A 1 APP_HOSTPATH | grep value | cut -d: -f 2 | xargs)
+export APP_HOSTPATH
+
+echo "Replacing path references:"
+echo "Old path:       '$oldpath'"
+echo "New path:       '$APP_HOSTPATH'"
+echo ""
+
+wp_search_replace "$oldpath" "$APP_HOSTPATH"
 
 # =============================================================================
 #
 # Replace all instances of master.k8s.p4.greenpeace.org with new domain
 #
 function do_release_domain {
-  wp_search_replace $DEVELOP_DOMAIN $RELEASE_DOMAIN
+  search_replace $DEVELOP_DOMAIN $RELEASE_DOMAIN
 }
 
 # =============================================================================
@@ -126,8 +144,8 @@ function do_release_domain {
 # Replace all instances of [release.]k8s.p4.greenpeace.org with new domain
 #
 function do_master_domain {
-  wp_search_replace $RELEASE_DOMAIN $MASTER_DOMAIN
-  wp_search_replace $DEVELOP_DOMAIN $MASTER_DOMAIN
+  search_replace $RELEASE_DOMAIN $MASTER_DOMAIN
+  search_replace $DEVELOP_DOMAIN $MASTER_DOMAIN
 }
 
 # =============================================================================
@@ -135,9 +153,9 @@ function do_master_domain {
 # Replace all instances of [release.|master.]k8s.p4.greenpeace.org with new domain
 #
 function do_production_domain {
-  wp_search_replace $RELEASE_DOMAIN $PRODUCTION_DOMAIN
-  wp_search_replace $MASTER_DOMAIN $PRODUCTION_DOMAIN
-  wp_search_replace $DEVELOP_DOMAIN $PRODUCTION_DOMAIN
+  search_replace $RELEASE_DOMAIN $PRODUCTION_DOMAIN
+  search_replace $MASTER_DOMAIN $PRODUCTION_DOMAIN
+  search_replace $DEVELOP_DOMAIN $PRODUCTION_DOMAIN
 }
 
 # =============================================================================
@@ -156,14 +174,14 @@ function do_custom_domain {
   new_domain=${new_domain%"http://"}
   new_domain=${new_domain%"https://"}
 
-  wp_search_replace $RELEASE_DOMAIN "$new_domain"
-  wp_search_replace $MASTER_DOMAIN "$new_domain"
-  wp_search_replace $DEVELOP_DOMAIN "$new_domain"
+  search_replace $RELEASE_DOMAIN "$new_domain"
+  search_replace $MASTER_DOMAIN "$new_domain"
+  search_replace $DEVELOP_DOMAIN "$new_domain"
 }
 
 # =============================================================================
 #
-# Choose which type of domain replacement to perform
+# Attempt to detect domain automatically
 #
 echo ""
 echo "============================================================================="
