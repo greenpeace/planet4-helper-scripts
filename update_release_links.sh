@@ -34,7 +34,7 @@ kc="kubectl -n $namespace"
 pod=$($kc get pods \
     --sort-by=.metadata.creationTimestamp \
     --field-selector=status.phase=Running \
-    -l "app=wordpress-php,release=${release}" \
+    -l "app=planet4,release=${release},component=php" \
     -o jsonpath="{.items[-1:].metadata.name}")
 
 echo "Pod:        $pod"
