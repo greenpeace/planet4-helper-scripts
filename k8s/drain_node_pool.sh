@@ -1,20 +1,50 @@
 #!/usr/bin/env bash
-set -eu
+set -euo pipefail
 
 nodepool=$1
+sleep=${2:-120}
 
-echo "Draining nodes in nodepool '$nodepool' ..."
-#
-# for node in $(kubectl get nodes -l cloud.google.com/gke-nodepool="$nodepool" -o=name)
-# do
-#   kubectl cordon "$node"
-# done
+nodes=$(kubectl get nodes -l cloud.google.com/gke-nodepool="$nodepool" -o=name)
+num=$(echo "$nodes" | wc -l)
 
-kubectl get nodes
+echo
+echo "Draining nodes in nodepool '$nodepool':"
+echo
+echo "${nodes[@]}"
+echo "$num total"
 
-for node in $(kubectl get nodes -l cloud.google.com/gke-nodepool="$nodepool" -o=name)
+echo
+read -rp "Does this look good? [y/N] " yn
+case "$yn" in
+    [Yy]* ) : ;;
+    * ) exit 1;;
+esac
+
+i=0
+for node in $nodes
 do
-  kubectl drain --force --ignore-daemonsets --delete-local-data --grace-period=10 "$node" &
+  echo
+  i=$(( i + 1 ))
+  echo " $i/$num >> Cordoning ${node#node\/} ..."
+  kubectl cordon "${node}"
 done
+echo
 
-pause
+i=0
+for node in $nodes
+do
+  echo
+  i=$(( i + 1 ))
+  echo " $i/$num >> Draining ${node#node\/} ..."
+  time kubectl drain --force --ignore-daemonsets --delete-local-data --grace-period=30 "${node}"
+  echo
+  date
+  [[ $i < $num ]] && {
+    printf "Waiting %ds for things to calm down ... (press any key to continue) " ${sleep}
+    # shellcheck disable=SC2034
+    set +e
+    read -t ${sleep} -s -n 1 answer
+    [ $? == 0 ] && echo "... interrupted!"
+    set -e
+  }
+done
