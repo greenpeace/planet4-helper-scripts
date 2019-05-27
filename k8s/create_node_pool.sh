@@ -35,8 +35,8 @@ machine_type=${MACHINE_TYPE:-n1-standard-4}
 
 
 
-min_nodes=${MIN_NODES:-4}
-max_nodes=${MAX_NODES:-10}
+min_nodes=${MIN_NODES:-10}
+max_nodes=${MAX_NODES:-20}
 
 num_nodes=${NUM_NODES:-${min_nodes}}
 
