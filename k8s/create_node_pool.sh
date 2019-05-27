@@ -57,6 +57,7 @@ case "$yn" in
 esac
 
 gcloud container node-pools create "$name" \
+  --no-enable-autoupgrade \
   --project=$project \
   --cluster=$cluster \
   --zone=$zone \
