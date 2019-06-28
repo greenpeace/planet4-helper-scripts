@@ -6,9 +6,11 @@ name=${1:-}
 node_version=${NODE_VERSION:-latest}
 
 if [ $node_version = "latest" ]; then
+  echo "Using latest available node version"
   node_version_param=""
 else
-  node_version_param="--node_version=$node_version "
+  echo "Using node version: $node_version"
+  node_version_param="--node-version=$node_version "
 fi
 
 cluster=${2:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
@@ -38,14 +40,14 @@ echo "Cluster:   $cluster"
 disk_size=${DISK_SIZE:-200}
 machine_type=${MACHINE_TYPE:-n1-standard-4}
 
-
-
 min_nodes=${MIN_NODES:-10}
 max_nodes=${MAX_NODES:-20}
 
 num_nodes=${NUM_NODES:-${min_nodes}}
 
 zone=${ZONE:-us-central1-a}
+
+echo "node_version: $node_version"
 
 echo "machine:   $machine_type"
 echo "zone:      $zone"
