@@ -43,8 +43,8 @@ do
     printf "Waiting %ds for things to calm down ... (press any key to continue) " ${sleep}
     # shellcheck disable=SC2034
     set +e
-    read -t ${sleep} -s -n 1 answer
-    [ $? == 0 ] && echo "... interrupted!"
+    # shellcheck disable=SC2034
+    read -rt "${sleep}" -s -n 1 answer && echo "... interrupted!"
     set -e
   }
 done
