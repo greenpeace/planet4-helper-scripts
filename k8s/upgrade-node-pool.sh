@@ -33,7 +33,7 @@ MAX_NODES=${MAX_NODES:-$(grep maxNodeCount <<<"$current_state" | cut -d: -f2 | x
 
 if [[ $(kubectl get node -l cloud.google.com/gke-nodepool="${new_pool}" -o name | wc -l | xargs) -lt 1 ]]
 then
-  ./create_node_pool.sh "$new_pool"
+  ./create_node_pool.sh "$new_pool" "$cluster"
 else
   echo "Nodepool '$new_pool' already exists, skipping ..."
 fi
