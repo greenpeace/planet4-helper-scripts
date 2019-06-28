@@ -2,8 +2,6 @@
 # shellcheck disable=SC2086
 set -euo pipefail
 
-echo
-
 name=${1:-}
 
 cluster=${2:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
@@ -48,9 +46,12 @@ echo "disk_size: $disk_size"
 echo "num_nodes: $num_nodes"
 echo "min_nodes: $min_nodes"
 echo "max_nodes: $max_nodes"
+echo
+
+echo "AUTO UPGRADE IS DISABLED! Fix P4 then remove this line and enable auto-upgrading nodepools!"
 
 echo
-read -rp "${1:-"Does this look good?"} [y/N] " yn
+read -rp "Create new nodepool named '$name' ? [y/N] " yn
 case "$yn" in
     [Yy] ) : ;;
     * ) exit 1;;
@@ -64,6 +65,7 @@ gcloud container node-pools create "$name" \
   --machine-type=$machine_type \
   --disk-size=$disk_size \
   --enable-autoscaling \
+  --no-enable-autoupgrade \
   --num-nodes=$num_nodes \
   --min-nodes=$min_nodes \
   --max-nodes=$max_nodes
