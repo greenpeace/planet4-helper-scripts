@@ -3,6 +3,13 @@
 set -euo pipefail
 
 name=${1:-}
+node_version=${NODE_VERSION:-latest}
+
+if [ $node_version = "latest" ]; then
+  node_version_param=""
+else
+  node_version_param="--node_version=$node_version "
+fi
 
 cluster=${2:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
 project=${GCP_PROJECT:-$(gcloud config get-value project)}
@@ -62,6 +69,7 @@ gcloud container node-pools create "$name" \
   --project=$project \
   --cluster=$cluster \
   --zone=$zone \
+  $node_version_param \
   --machine-type=$machine_type \
   --disk-size=$disk_size \
   --enable-autoscaling \
