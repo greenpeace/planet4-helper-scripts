@@ -47,3 +47,5 @@ do
     set -e
   }
 done
+
+exit 0

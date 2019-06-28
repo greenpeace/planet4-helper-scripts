@@ -35,4 +35,4 @@ case "$yn" in
     * ) exit 1;;
 esac
 
-gcloud container node-pools delete --cluster="$cluster" --project="$project"
+gcloud container node-pools delete "$nodepool" --cluster="$cluster" --project="$project"
