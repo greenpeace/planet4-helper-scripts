@@ -16,5 +16,17 @@ make
 
 ```
 
+### Final go-live database updates
 
-Test
+Example:
+```bash
+
+# Configure environment
+./configure.sh planet4-flibble-master flibble
+
+# Perform database search and replace
+make update-links
+
+# Flush the redis cache
+make flush
+```
