@@ -63,8 +63,6 @@ function search_replace {
 
     wp_search_replace "$search" "$replace"
 
-    db_search_replace "$search" "$replace" "$path"
-
 }
 
 function wp_search_replace {
@@ -83,18 +81,19 @@ function wp_search_replace {
 }
 
 function db_search_replace {
-  $kc exec "$pod" -- wp search-replace "$1" "$2" --dry-run --all-tables --precise --skip-columns=guid
-
-  echo ""
-  echo "Search:     $1"
-  echo "Replace:    $2"
-  echo ""
-
-  read -rp "Apply changes? [y/N] " yn
-  case $yn in
-      [Yy]* ) $kc exec -ti "$pod" -- wp search-replace "$1" "$2" --all-tables --precise --skip-columns=guid ;;
-      * ) echo "Skipping... " ;;
-  esac
+  >&2 echo "Unused function: db_search_replace"
+  # $kc exec "$pod" -- wp search-replace "$1" "$2" --dry-run --all-tables --precise --skip-columns=guid
+  #
+  # echo ""
+  # echo "Search:     $1"
+  # echo "Replace:    $2"
+  # echo ""
+  #
+  # read -rp "Apply changes? [y/N] " yn
+  # case $yn in
+  #     [Yy]* ) $kc exec -ti "$pod" -- wp search-replace "$1" "$2" --all-tables --precise --skip-columns=guid ;;
+  #     * ) echo "Skipping... " ;;
+  # esac
 }
 
 # =============================================================================
