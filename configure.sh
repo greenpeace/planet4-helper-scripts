@@ -46,15 +46,31 @@ fi
 #
 # Encode GoogleApps ClientID
 #
-echo "---"
-echo
-echo "Create Google Apps OAUTH credentials at:"
-echo "https://console.cloud.google.com/apis/credentials?project=planet4-production&organizationId=644593243610"
-echo
+php=
+option=
+
 ga_client_id=${GA_CLIENT_ID:-}
 if [[ -z "$ga_client_id" ]]
 then
-  read -rp "Enter GA_CLIENT_ID: " ga_client_id
+  set +e
+  php=$(kubectl get pods --namespace "${namespace}" \
+      --field-selector=status.phase=Running \
+      -l "app=planet4,component=php,release=${release}" \
+      -o jsonpath="{.items[0].metadata.name}")
+  option=$(kubectl -n "${namespace}" exec "$php" -- wp option get galogin --format=json)
+  ga_client_id=$(jq -r '.ga_clientid' <<<"$option")
+  set -e
+
+  if [ -z "$ga_client_id" ]
+  then
+    echo "---"
+    echo
+    echo "Create Google Apps OAUTH credentials at:"
+    echo "https://console.cloud.google.com/apis/credentials?project=planet4-production&organizationId=644593243610"
+    echo
+
+    read -rp "Enter GA_CLIENT_ID: " ga_client_id
+  fi
 fi
 
 #
@@ -63,7 +79,15 @@ fi
 ga_client_secret=${GA_CLIENT_SECRET:-}
 if [[ -z "$ga_client_secret" ]]
 then
-  read -rsp "Enter GA_CLIENT_SECRET: " ga_client_secret
+  set +e
+  ga_client_secret=$(jq -r '.ga_clientsecret' <<<"$option")
+  set -e
+
+  if [ -z "$ga_client_secret" ]
+  then
+    read -rsp "Enter GA_CLIENT_SECRET: " ga_client_secret
+  fi
+
   echo
 fi
 
