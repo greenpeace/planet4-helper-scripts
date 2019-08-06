@@ -12,6 +12,8 @@ GA_CLIENT_SECRET ?= $(shell cat GA_CLIENT_SECRET 2>/dev/null)
 # all: lint ga-login update-links flush-redis
 all: ga-login update-links flush
 
+launch:	update-links flush
+
 lint: lint-sh
 
 lint-sh:
