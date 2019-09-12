@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -eo pipefail
 
 function usage {
   echo "Usage:
