@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -eu
 
+function load_ga_credentials() {
+  set +e
+  php=$(kubectl get pods --namespace "${namespace}" \
+      --field-selector=status.phase=Running \
+      -l "app=planet4,component=php,release=${release}" \
+      -o jsonpath="{.items[0].metadata.name}")
+  option=$(kubectl -n "${namespace}" exec "$php" -- wp option get galogin --format=json)
+  ga_client_id=$(jq -r '.ga_clientid' <<<"$option")
+  set -e
+}
+
 release=${1:-}
 
 [[ -z "$release" ]] && {
@@ -52,14 +63,12 @@ option=
 ga_client_id=${GA_CLIENT_ID:-}
 if [[ -z "$ga_client_id" ]]
 then
-  set +e
-  php=$(kubectl get pods --namespace "${namespace}" \
-      --field-selector=status.phase=Running \
-      -l "app=planet4,component=php,release=${release}" \
-      -o jsonpath="{.items[0].metadata.name}")
-  option=$(kubectl -n "${namespace}" exec "$php" -- wp option get galogin --format=json)
-  ga_client_id=$(jq -r '.ga_clientid' <<<"$option")
-  set -e
+  read -rp "Use existing Google Apps login credentials from DB? [y/N] " use_existing_credentials
+  echo
+  case $use_existing_credentials in
+      [Yy]* ) load_ga_credentials;;
+      * ) : ;;
+  esac
 
   if [ -z "$ga_client_id" ]
   then
@@ -79,9 +88,12 @@ fi
 ga_client_secret=${GA_CLIENT_SECRET:-}
 if [[ -z "$ga_client_secret" ]]
 then
-  set +e
-  ga_client_secret=$(jq -r '.ga_clientsecret' <<<"$option")
-  set -e
+  if [[ "$use_existing_credentials" =~ ^[yY] ]]
+  then
+    set +e
+    ga_client_secret=$(jq -r '.ga_clientsecret' <<<"$option")
+    set -e
+  fi
 
   if [ -z "$ga_client_secret" ]
   then
