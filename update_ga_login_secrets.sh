@@ -28,8 +28,8 @@ release=${1:-${HELM_RELEASE}}
 #
 # Determine namespace from release
 #
-namespace=${2:-${HELM_NAMESPACE:-$(./get_namespace.sh $release)}}
-if ! kubectl get namespace $namespace > /dev/null
+namespace=${2:-${HELM_NAMESPACE:-$(./get_namespace.sh "$release")}}
+if ! kubectl get namespace "$namespace" > /dev/null
 then
   echo "ERROR: Namespace '$namespace' not found."
   exit 1
@@ -46,21 +46,21 @@ fi
 
 if [[ -z "$GA_CLIENT_ID" ]]
 then
-  read -s -p "Google Apps Login client ID: " GA_CLIENT_ID
+  read -s -r -p "Google Apps Login client ID: " GA_CLIENT_ID
   echo
 else
   # Read base64 encoded var from environment
-  GA_CLIENT_ID=$(echo $GA_CLIENT_ID | openssl base64 -a -A -d | tr -d '\n')
+  GA_CLIENT_ID=$(echo "$GA_CLIENT_ID" | openssl base64 -a -A -d | tr -d '\n')
 fi
 
 if [[ -z "$GA_CLIENT_SECRET" ]]
 then
-  read -s -p "Google Apps Login client secret: " GA_CLIENT_SECRET
+  read -s -r -p "Google Apps Login client secret: " GA_CLIENT_SECRET
   echo
 else
   # Read base64 encoded var from environment
-  GA_CLIENT_SECRET=$(echo $GA_CLIENT_SECRET | openssl base64 -a -A -d | tr -d '\n')
+  GA_CLIENT_SECRET=$(echo "$GA_CLIENT_SECRET" | openssl base64 -a -A -d | tr -d '\n')
 fi
 
-./update_release_wp_array_option.sh $release $namespace galogin ga_clientid $GA_CLIENT_ID
-./update_release_wp_array_option.sh $release $namespace galogin ga_clientsecret $GA_CLIENT_SECRET
+./update_release_wp_array_option.sh "$release" "$namespace" galogin ga_clientid "$GA_CLIENT_ID"
+./update_release_wp_array_option.sh "$release" "$namespace" galogin ga_clientsecret "$GA_CLIENT_SECRET"
