@@ -55,7 +55,6 @@ esac
 function search_replace {
     search=$1
     replace=$2
-    path=${3:-$APP_HOSTPATH}
 
     echo ""
     echo "============================================================================="
