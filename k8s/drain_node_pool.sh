@@ -14,7 +14,7 @@ echo "${nodes[@]}"
 echo "$num total"
 
 echo
-read -rp "Does this look good? [y/N] " yn
+read -rp "Continue? [y/N] " yn
 case "$yn" in
     [Yy]* ) : ;;
     * ) exit 1;;
@@ -47,5 +47,7 @@ do
     set -e
   }
 done
+
+echo
 
 exit 0
