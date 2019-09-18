@@ -2,8 +2,9 @@
 # shellcheck disable=SC2086
 set -euo pipefail
 
-name=${1:-}
 node_version=${NODE_VERSION:-latest}
+
+echo
 
 if [ $node_version = "latest" ]; then
   echo "Using latest available node version"
@@ -13,8 +14,13 @@ else
   node_version_param="--node-version=$node_version "
 fi
 
-cluster=${2:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
+echo
+
+cluster=${1:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
 project=${GCP_PROJECT:-$(gcloud config get-value project)}
+
+node_pool=${2:-${NODE_POOL:-}}
+
 
 [ -z "$project" ] && {
   read -rp "Enter GCP project: " project
@@ -29,11 +35,11 @@ echo "Project:   $project"
 }
 echo "Cluster:   $cluster"
 
-[ -z "$name" ] && {
+[ -z "$node_pool" ] && {
   echo
   gcloud container node-pools list --project=$project --cluster=$cluster
   echo
-  read -rp "Enter new node-pool name: " name
+  read -rp "Enter new node-pool name: " node_pool
   echo
 }
 
@@ -47,6 +53,8 @@ num_nodes=${NUM_NODES:-${min_nodes}}
 
 zone=${ZONE:-us-central1-a}
 
+scopes=${SCOPES:-gke-default,https://www.googleapis.com/auth/ndev.clouddns.readwrite}
+
 echo "node_version: $node_version"
 
 echo "machine:   $machine_type"
@@ -55,18 +63,19 @@ echo "disk_size: $disk_size"
 echo "num_nodes: $num_nodes"
 echo "min_nodes: $min_nodes"
 echo "max_nodes: $max_nodes"
+echo "scopes:    $scopes"
 echo
 
 echo "AUTO UPGRADE IS DISABLED! Fix P4 then remove this line and enable auto-upgrading nodepools!"
 
 echo
-read -rp "Create new nodepool named '$name' ? [y/N] " yn
+read -rp "Create new nodepool named '$node_pool' ? [y/N] " yn
 case "$yn" in
     [Yy] ) : ;;
     * ) exit 1;;
 esac
 
-gcloud container node-pools create "$name" \
+gcloud container node-pools create "$node_pool" \
   --no-enable-autoupgrade \
   --project=$project \
   --cluster=$cluster \
@@ -78,4 +87,8 @@ gcloud container node-pools create "$name" \
   --no-enable-autoupgrade \
   --num-nodes=$num_nodes \
   --min-nodes=$min_nodes \
-  --max-nodes=$max_nodes
+  --max-nodes=$max_nodes \
+  --scopes $scopes
+
+echo "Success"
+echo

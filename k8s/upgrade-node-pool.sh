@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 set -eauo pipefail
 
-[[ $# -lt 1 ]] && >&2 echo "ERROR: node pool name must be specified as first parameter" && exit 1
-old_pool=$1
-
 project=${GCP_PROJECT:-$(gcloud config get-value project)}
 [ -z "$project" ] && {
   read -rp "Enter GCP project: " project
 }
 echo "Project:   $project"
 
-cluster=${2:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
+cluster=${1:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
 [ -z "$cluster" ] && {
   echo
   gcloud container clusters list --project="$project"
@@ -19,8 +16,21 @@ cluster=${2:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/n
 }
 echo "Cluster:   $cluster"
 
+old_pool=${2:-}
+
+[ -z "$old_pool" ] && {
+  echo
+  gcloud container node-pools list --project="$project" --cluster="$cluster"
+  echo
+  read -rp "Enter nodepool name to upgrade: " old_pool
+  echo
+}
+
 n=${old_pool//[!0-9]/}
 new_pool=pool-$(( n + 1 ))
+
+read -rp "New node pool name: [$new_pool] " new_pool_answer
+[ -z "$new_pool_answer" ] || new_pool=$new_pool_answer
 
 echo "Upgrading nodepool '$old_pool' to '${new_pool}' ... "
 
@@ -33,7 +43,7 @@ MAX_NODES=${MAX_NODES:-$(grep maxNodeCount <<<"$current_state" | cut -d: -f2 | x
 
 if [[ $(kubectl get node -l cloud.google.com/gke-nodepool="${new_pool}" -o name | wc -l | xargs) -lt 1 ]]
 then
-  ./create_node_pool.sh "$new_pool" "$cluster"
+  ./create_node_pool.sh "$cluster" "$new_pool"
 else
   echo "Nodepool '$new_pool' already exists, skipping ..."
 fi
