@@ -64,6 +64,6 @@ fi
 
 while read -r BUCKET_NAME
 do
-  echo "Applying CORS configuration per $CORS_JSON_FILE"
+  echo "Applying CORS configuration per $CORS_JSON_FILE and "$RELEASE"_corsconfig_action"
   gsutil cors set $CORS_JSON_FILE $BUCKET_NAME >> $LOG_FILE 2>&1
-done < bucket_list
+done < "$RELEASE"_corsconfig_action
