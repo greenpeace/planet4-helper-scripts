@@ -69,6 +69,27 @@ done
 
 kubectl -n kube-system get pod -l app=traefik -o wide
 
+
+#move rocketchat primary pod to new pools
+echo
+echo "Moving rocketchat mongodo primary pod to new node pool ** short OUTAGE likely **"
+for i in $(kubectl -n rocketchat get pod -l app=mongodb -l component=primary -o name)
+do
+  echo " $i ..."
+  if kubectl -n rocketchat get "$i" -o wide | grep -q "$new_pool"
+  then
+    echo "    ... SKIP: on new node-pool already"
+    continue
+  fi
+
+  kubectl -n rocketchat delete "$i"
+  sleep 30
+done
+
+kubectl -n rocketchat get pod -l app=mongodb -l component=primary -o wide
+
+
+
 read -rp "Continue ? " answer
 case ${answer:0:1} in
     y|Y )
