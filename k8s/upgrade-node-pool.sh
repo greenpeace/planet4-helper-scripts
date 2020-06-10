@@ -73,21 +73,23 @@ kubectl -n kube-system get pod -l app=traefik -o wide
 #move rocketchat primary pod to new pools
 echo
 echo "Moving rocketchat mongodo primary pod to new node pool ** short OUTAGE likely **"
-for i in $(kubectl -n rocketchat get pod -l app=mongodb -l component=primary -o name)
-do
-  echo " $i ..."
-  if kubectl -n rocketchat get "$i" -o wide | grep -q "$new_pool"
-  then
-    echo "    ... SKIP: on new node-pool already"
-    continue
-  fi
+if "$cluster"=p4-development
+then
+  for i in $(kubectl -n rocketchat get pod -l app=mongodb -l component=primary -o name)
+  do
+    echo " $i ..."
+    if kubectl -n rocketchat get "$i" -o wide | grep -q "$new_pool"
+    then
+      echo "    ... SKIP: on new node-pool already"
+      continue
+    fi
 
-  kubectl -n rocketchat delete "$i"
-  sleep 30
-done
+    kubectl -n rocketchat delete "$i"
+    sleep 30
+  done
 
 kubectl -n rocketchat get pod -l app=mongodb -l component=primary -o wide
-
+fi
 
 
 read -rp "Continue ? " answer
@@ -103,6 +105,8 @@ esac
 
 # cordon nodes
 ./cordon_node_pool.sh "$old_pool"
+
+
 
 # perform graceful p4 rollout
 echo "========================================================================="
