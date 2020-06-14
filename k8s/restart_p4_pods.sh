@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+#set -x
 set -euo pipefail
 RED='\033[1;31m'
 GREEN='\033[1;32m'
@@ -76,7 +76,7 @@ then
       ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
       kubectl rollout restart -n "$ns" statefulset/planet4-"$i"-"$deployenv"-redis-master
     done
-    kubectl get pod -A -l app=redis -o wide | grep -m "$count" "$deployenv"
+    kubectl get pod -A -l app=redis -o wide | grep "$deployenv"
   fi
 else
   if [[ $deployenv = development ]]; then
@@ -100,16 +100,15 @@ then
     done
     kubectl get pods -n develop -l app=planet4 -o wide
   else
-    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
+    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
     do
       echo " $i ..."
       ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
-      kubectl rollout restart -n "$ns" deployment/planet4-"$i"-"$deployenv"-wordpress-openresty
-      kubectl rollout restart -n "$ns" deployment/planet4-"$i"-"$deployenv"-wordpress-php
+      kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-openresty
+      kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-php
     done
     kubectl get pods -A -l app=planet4 -o wide | grep "$deployenv"
   fi
-  sleep 5
 else
   if [[ $deployenv = development ]]; then
     kubectl rollout restart -n develop deployment/planet4-"$nro"-wordpress-openresty
@@ -138,12 +137,12 @@ then
       fi
     done
   else
-    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
+    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
     do
       echo " $i ..."
       if
       ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
-      url=$(kubectl get ingress -n "$ns" planet4-"$i"-"$deployenv"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+      url=$(kubectl get ingress -n "$ns" planet4-"$i"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
       curl -fsSI  "https://$url" &>/dev/null
       then
         echo -e "https://$url" "${GREEN}OK${NC}"
