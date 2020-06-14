@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-
-set -eauo pipefail
+set -x
+set -euo pipefail
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 NC='\033[0m' # No Color
+count=50
 
 PS3="Please select K8 P4 Development or P4 Production: "
 select name in Development Production
@@ -26,16 +27,7 @@ echo "K8 Environment:   $kube_env"
 echo "Project:          $project"
 echo
 
-cluster=${1:-${GKE_CLUSTER:-$(gcloud config get-value container/cluster 2>/dev/null)}}
-[ -z "$cluster" ] && {
-  echo
-  gcloud container clusters list --project="$project"
-  echo
-  read -rp "Confirm cluster name: " cluster
-}
-echo "Cluster:   $cluster"
-
-if [ $cluster = planet4-production ]
+if [[ $project = planet4-production ]]
 then
   echo -e "\n You are in ${RED} PRODUCTION ${NC}\n"
   PS3="Please select a deployment environment: "
@@ -57,68 +49,75 @@ else
 fi
 echo "Deployment Environment:   $deployenv"
 
-nro=
-[ -z "$nro" ] && {
-  printf  '\nIf you just want to restart one NRO please enter here, otherwise ALL deployments are restarted\n'
-  read -rp "Enter NRO or deployment name: " nro
-}
-echo "Restarting:   $nro"
+printf  '\n If you just want to restart one NRO, enter the full name of the NRO'
+printf  '\n The full name is the CONTAINER_PREFIX without planet-4'
+read -rp "Enter NRO or deployment name here : " nro
+
+printf  '\n If you want to start x number of deployments, enter the number here'
+printf  '\n otherwise ALL deployments per environment are restarted\n'
+read -rp "Enter the number of deployments you want to restart : " count
+
+echo "Restarting this NRO : $nro or this # of deployments : $count or ALL deployments"
 
 printf '\nRestarting P4 Redis stateful sets, if cordoned they will move to a new node pool ...\n'
 if [ -z "$nro" ]
 then
-  if [ $deployenv = development ]; then
-    for i in $(kgp -A |grep redis |cut -d' ' -f1)
+  if [[ $deployenv = development ]]; then
+    for i in $(kubectl get pods -n develop | grep -m "$count" redis | awk -F '-redis' '{print $1}' | cut -c 9-)
     do
       echo " $i ..."
-      kubectl rollout restart -n develop statefulset/planet4-"$1"-redis-master
+      kubectl rollout restart -n develop statefulset/planet4-"$i"-redis-master
     done
+    kubectl get pod -n develop -o wide | grep redis
   else
-    for i in $(kgp -A |grep $deployenv |grep redis |cut -d' ' -f1)
+    for i in $(kubectl get pods -A |grep $deployenv |grep -m "$count" redis |cut -d' ' -f1 | sort -u)
     do
       echo " $i ..."
-      kubectl rollout restart -n "$1" statefulset/planet4-"$1"-$deployenv-redis-master
+      ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
+      kubectl rollout restart -n "$ns" statefulset/planet4-"$i"-"$deployenv"-redis-master
     done
+    kubectl get pod -A -l app=redis -o wide | grep -m "$count" "$deployenv"
   fi
-  kubectl get pod -A -l app=redis -o wide | grep $deployenv
-  sleep 60
 else
-  if [ $deployenv = development ]; then
+  if [[ $deployenv = development ]]; then
     kubectl rollout restart -n develop statefulset/planet4-"$nro"-redis-master
   else
-    kubectl rollout restart -n "$nro" statefulset/planet4-"$nro"-"$deployenv"-redis-master
+    ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
+    kubectl rollout restart -n "$ns" statefulset/planet4-"$nro"-"$deployenv"-redis-master
   fi
-  kubectl get pod -A -l app=redis -o wide | grep "$nro" | grep $deployenv
+  kubectl get pod -A -l app=redis -o wide | grep "$nro" | grep "$deployenv"
 fi
-
 
 printf '\nRestarting P4 Wordpress deployments, if cordoned they will move to a new node pool ...\n'
 if [ -z "$nro" ]
 then
-  if [ $deployenv = development ]; then
-    for i in $(kgp -A |grep wordpress |cut -d' ' -f1 | sort -u)
+  if [[ $deployenv = development ]]; then
+    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
-      kubectl rollout restart -n develop deployment/planet4-"$1"-wordpress-openresty
-      kubectl rollout restart -n develop deployment/planet4-"$1"-wordpress-php
+      kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-openresty
+      kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-php
     done
+    kubectl get pods -n develop -l app=planet4 -o wide
   else
-    for i in $(kgp -A |grep $deployenv |grep wordpress |cut -d' ' -f1 | sort -u)
+    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
-      kubectl rollout restart -n "$1" deployment/planet4-"$1"-"$deployenv"-wordpress-openresty
-      kubectl rollout restart -n "$1" deployment/planet4-"$1"-"$deployenv"-wordpress-php
+      ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
+      kubectl rollout restart -n "$ns" deployment/planet4-"$i"-"$deployenv"-wordpress-openresty
+      kubectl rollout restart -n "$ns" deployment/planet4-"$i"-"$deployenv"-wordpress-php
     done
+    kubectl get pods -A -l app=planet4 -o wide | grep "$deployenv"
   fi
-  kubectl get pod -A -l app=planet4 -o wide | grep "$deployenv"
   sleep 5
 else
-  if [ $deployenv = development ]; then
+  if [[ $deployenv = development ]]; then
     kubectl rollout restart -n develop deployment/planet4-"$nro"-wordpress-openresty
     kubectl rollout restart -n develop deployment/planet4-"$nro"-wordpress-php
   else
-    kubectl rollout restart -n "$nro" deployment/planet4-"$nro"-"$deployenv"-wordpress-openresty
-    kubectl rollout restart -n "$nro" deployment/planet4-"$nro"-"$deployenv"-wordpress-php
+    ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
+    kubectl rollout restart -n "$ns" deployment/planet4-"$nro"-"$deployenv"-wordpress-openresty
+    kubectl rollout restart -n "$ns" deployment/planet4-"$nro"-"$deployenv"-wordpress-php
   fi
   kubectl get pod -A -l app=planet4 -o wide | grep "$nro" | grep "$deployenv"
 fi
@@ -127,29 +126,48 @@ printf '\nChecking everything has restarted successfully ... wait 1 minute for t
 sleep 60
 if [ -z "$nro" ]
 then
-  for i in $(kgp -A |grep wordpress |cut -d' ' -f1 | sort -u)
-  do
-    echo " $i ..."
-    if [ $deployenv = development ]; then
-      curl -fsSI "https://k8s.p4.greenpeace.org/$1/" &>/dev/null &&
-      echo -e "$1" "${GREEN}OK${NC}" || echo -e "$1" "${RED}FAIL${NC}"
-    elif [ $deployenv = release ]; then
-      curl -fsSI  "https://$deployenv.k8s.p4.greenpeace.org/$1/" &>/dev/null &&
-      echo -e "$1" "${GREEN}OK${NC}" || echo -e "$1" "${RED}FAIL${NC}"
-    elif [ $deployenv = master ]; then
-      curl -fsSI  "https://greenpeace.org/$1/" &>/dev/null &&
-      echo -e "$1" "${GREEN}OK${NC}" || echo -e "$1" "${RED}FAIL${NC}"
-    fi
-  done
+  if [[ $deployenv = development ]]; then
+    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
+    do
+      echo " $i ..."
+      url=$(kubectl get ingress -n develop planet4-"$i"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+      if curl -fsSI "https://$url" &>/dev/null; then
+        echo -e "https://$url" "${GREEN}OK${NC}"
+      else
+        echo -e "https://$url" "${RED}FAIL${NC}"
+      fi
+    done
+  else
+    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
+    do
+      echo " $i ..."
+      if
+      ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
+      url=$(kubectl get ingress -n "$ns" planet4-"$i"-"$deployenv"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+      curl -fsSI  "https://$url" &>/dev/null
+      then
+        echo -e "https://$url" "${GREEN}OK${NC}"
+      else echo -e "https://$url" "${RED}FAIL${NC}"
+      fi
+    done
+  fi
 else
-  if [ $deployenv = development ]; then
-    curl -fsSI "https://k8s.p4.greenpeace.org/$nro/" &>/dev/null &&
-    echo -e "$nro" "${GREEN}OK${NC}" || echo -e "$nro" "${RED}FAIL${NC}"
-  elif [ $deployenv = release ]; then
-    curl -fsSI "https://$deployenv.k8s.p4.greenpeace.org/$nro/" &>/dev/null &&
-    echo -e "$nro" "${GREEN}OK${NC}" || echo -e "$nro" "${RED}FAIL${NC}"
-  elif [ $deployenv = master ]; then
-    curl -fsSI "https://greenpeace.org/$nro/" &>/dev/null &&
-    echo -e "$nro" "${GREEN}OK${NC}" || echo -e "$nro" "${RED}FAIL${NC}"
+  if [[ $deployenv = development ]]; then
+    if
+    url=$(kubectl get ingress -n develop planet4-"$nro"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+    curl -fsSI "https://$url/" &>/dev/null
+    then
+      echo -e "https://$url" "${GREEN}OK${NC}"
+    else echo -e "https://$url" "${RED}FAIL${NC}"
+    fi
+  else
+    if
+    ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
+    url=$(kubectl get ingress -n "$ns" planet4-"$nro"-"$deployenv"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+    curl -fsSI  "https://$url" &>/dev/null
+    then
+      echo -e "https://$url" "${GREEN}OK${NC}"
+    else echo -e "https://$url" "${RED}FAIL${NC}"
+    fi
   fi
 fi
