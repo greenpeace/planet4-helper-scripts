@@ -49,15 +49,20 @@ else
 fi
 echo "Deployment Environment:   $deployenv"
 
-printf  '\n If you just want to restart one NRO, enter the full name of the NRO'
-printf  '\n The full name is the CONTAINER_PREFIX without planet-4'
+printf '\n If you just want to restart one NRO, enter the full name of the NRO'
+printf '\n The full name is the CONTAINER_PREFIX without planet-4'
+printf '\n'
 read -rp "Enter NRO or deployment name here : " nro
+echo "Restarting this NRO : " "$nro"
 
-printf  '\n If you want to start x number of deployments, enter the number here'
-printf  '\n otherwise ALL deployments per environment are restarted\n'
-read -rp "Enter the number of deployments you want to restart : " count
-
-echo "Restarting this NRO : $nro or this # of deployments : $count or ALL deployments"
+if [ -z "$nro" ]
+then
+  printf '\n If you want to start x number of deployments, enter the number here'
+  printf '\n otherwise ALL deployments per environment are restarted'
+  printf '\n'
+  read -rp "Enter the number of deployments you want to restart : " count
+  echo "Restarting this # of deployments : " "$count" "or ALL deployments"
+fi
 
 printf '\nRestarting P4 Redis stateful sets, if cordoned they will move to a new node pool ...\n'
 if [ -z "$nro" ]
@@ -92,7 +97,8 @@ printf '\nRestarting P4 Wordpress deployments, if cordoned they will move to a n
 if [ -z "$nro" ]
 then
   if [[ $deployenv = development ]]; then
-    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
+    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | /
+    awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
       kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-openresty
@@ -100,7 +106,8 @@ then
     done
     kubectl get pods -n develop -l app=planet4 -o wide
   else
-    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
+    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | \
+      awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
     do
       echo " $i ..."
       ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
@@ -126,10 +133,12 @@ sleep 60
 if [ -z "$nro" ]
 then
   if [[ $deployenv = development ]]; then
-    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
+    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | \
+      awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
-      url=$(kubectl get ingress -n develop planet4-"$i"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+      url=$(kubectl get ingress -n develop planet4-"$i"-wordpress-openresty \
+        -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
       if curl -fsSI "https://$url" &>/dev/null; then
         echo -e "https://$url" "${GREEN}OK${NC}"
       else
@@ -137,12 +146,14 @@ then
       fi
     done
   else
-    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
+    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | \
+      awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
     do
       echo " $i ..."
       if
       ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
-      url=$(kubectl get ingress -n "$ns" planet4-"$i"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+      url=$(kubectl get ingress -n "$ns" planet4-"$i"-wordpress-openresty \
+        -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
       curl -fsSI  "https://$url" &>/dev/null
       then
         echo -e "https://$url" "${GREEN}OK${NC}"
@@ -153,7 +164,8 @@ then
 else
   if [[ $deployenv = development ]]; then
     if
-    url=$(kubectl get ingress -n develop planet4-"$nro"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+    url=$(kubectl get ingress -n develop planet4-"$nro"-wordpress-openresty \
+      -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
     curl -fsSI "https://$url/" &>/dev/null
     then
       echo -e "https://$url" "${GREEN}OK${NC}"
@@ -162,7 +174,8 @@ else
   else
     if
     ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
-    url=$(kubectl get ingress -n "$ns" planet4-"$nro"-"$deployenv"-wordpress-openresty -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
+    url=$(kubectl get ingress -n "$ns" planet4-"$nro"-"$deployenv"-wordpress-openresty \
+      -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
     curl -fsSI  "https://$url" &>/dev/null
     then
       echo -e "https://$url" "${GREEN}OK${NC}"
