@@ -108,12 +108,12 @@ esac
 
 
 
-# perform graceful p4 rollout
+# perform graceful p4 restart
 echo "========================================================================="
 echo
-echo "Now is the time to trigger a full rebuild of the application in CI"
+echo "Now is the time to restart the P4 applications"
 echo
-echo "Visit https://circleci.com/gh/greenpeace/planet4-base-fork and rerun the 'trigger-planet4' job."
+echo "Switch to another tab and run ./restart_p4_pods.sh"
 echo
 echo "Enter 'y' when all sites have been deployed."
 echo

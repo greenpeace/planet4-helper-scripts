@@ -4,7 +4,6 @@ set -euo pipefail
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 NC='\033[0m' # No Color
-count=50
 
 PS3="Please select K8 P4 Development or P4 Production: "
 select name in Development Production
@@ -64,6 +63,10 @@ then
   echo "Restarting this # of deployments : " "$count" "or ALL deployments"
 fi
 
+if [ -z "$count" ]
+then count=50
+fi
+
 printf '\nRestarting P4 Redis stateful sets, if cordoned they will move to a new node pool ...\n'
 if [ -z "$nro" ]
 then
@@ -75,11 +78,12 @@ then
     done
     kubectl get pod -n develop -o wide | grep redis
   else
-    for i in $(kubectl get pods -A |grep $deployenv |grep -m "$count" redis |cut -d' ' -f1 | sort -u)
+    for i in $(kubectl get pod -A | grep "$deployenv"-redis | grep -m "$count" redis | \
+      awk -F '-redis' '{print $1}' | cut -c 29- )
     do
       echo " $i ..."
-      ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
-      kubectl rollout restart -n "$ns" statefulset/planet4-"$i"-"$deployenv"-redis-master
+      ns=$(kubectl get pods -A | grep -w "$i" | cut -d' ' -f1 | sort -u )
+      kubectl rollout restart -n "$ns" statefulset/planet4-"$i"-redis-master
     done
     kubectl get pod -A -l app=redis -o wide | grep "$deployenv"
   fi
@@ -87,7 +91,7 @@ else
   if [[ $deployenv = development ]]; then
     kubectl rollout restart -n develop statefulset/planet4-"$nro"-redis-master
   else
-    ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
+    ns=$(kubectl get pods -A | grep -w "$nro" |cut -d' ' -f1 | sort -u )
     kubectl rollout restart -n "$ns" statefulset/planet4-"$nro"-"$deployenv"-redis-master
   fi
   kubectl get pod -A -l app=redis -o wide | grep "$nro" | grep "$deployenv"
@@ -97,7 +101,7 @@ printf '\nRestarting P4 Wordpress deployments, if cordoned they will move to a n
 if [ -z "$nro" ]
 then
   if [[ $deployenv = development ]]; then
-    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | /
+    for i in $(kubectl get pods -n develop | grep -m "$count" openresty | /
     awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
@@ -106,11 +110,11 @@ then
     done
     kubectl get pods -n develop -l app=planet4 -o wide
   else
-    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | \
-      awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
+    for i in $(kubectl get deployment -A | grep -m "$count" "$deployenv"-wordpress-openresty | \
+      awk -F '-wordpress' '{print $1}' | cut -c 29-)
     do
       echo " $i ..."
-      ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
+      ns=$(kubectl get pods -A | grep -w "$i" |cut -d' ' -f1 | sort -u)
       kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-openresty
       kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-php
     done
@@ -121,7 +125,7 @@ else
     kubectl rollout restart -n develop deployment/planet4-"$nro"-wordpress-openresty
     kubectl rollout restart -n develop deployment/planet4-"$nro"-wordpress-php
   else
-    ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
+    ns=$(kubectl get pods -A | grep -w "$nro" |cut -d' ' -f1 | sort -u )
     kubectl rollout restart -n "$ns" deployment/planet4-"$nro"-"$deployenv"-wordpress-openresty
     kubectl rollout restart -n "$ns" deployment/planet4-"$nro"-"$deployenv"-wordpress-php
   fi
@@ -133,7 +137,7 @@ sleep 60
 if [ -z "$nro" ]
 then
   if [[ $deployenv = development ]]; then
-    for i in $(kubectl get pods -n develop | grep -m "$count" wordpress | \
+    for i in $(kubectl get pods -n develop | grep -m "$count" openresty | \
       awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
@@ -146,12 +150,12 @@ then
       fi
     done
   else
-    for i in $(kubectl get pod -A | grep "$deployenv" | grep -m "$count" wordpress | \
+    for i in $(kubectl get deployment -A | grep "$deployenv"-wordpress | grep -m "$count" openresty | \
       awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
     do
       echo " $i ..."
       if
-      ns=$(kubectl get pods -A | grep "$i" |cut -d' ' -f1 | sort -u )
+      ns=$(kubectl get pods -A | grep -w "$i" |cut -d' ' -f1 | sort -u )
       url=$(kubectl get ingress -n "$ns" planet4-"$i"-wordpress-openresty \
         -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
       curl -fsSI  "https://$url" &>/dev/null
