@@ -64,7 +64,7 @@ then
 fi
 
 if [ -z "$count" ]
-then count=50
+then count=100
 fi
 
 printf '\nRestarting P4 Redis stateful sets, if cordoned they will move to a new node pool ...\n'
@@ -76,6 +76,8 @@ then
       echo " $i ..."
       kubectl rollout restart -n develop statefulset/planet4-"$i"-redis-master
     done
+    printf '\n ... wait 1 minute for things to restart \n'
+    sleep 60
     kubectl get pod -n develop -o wide | grep redis
   else
     for i in $(kubectl get pod -A | grep "$deployenv"-redis | grep -m "$count" redis | \
@@ -85,6 +87,8 @@ then
       ns=$(kubectl get pods -A | grep -w "$i" | cut -d' ' -f1 | sort -u )
       kubectl rollout restart -n "$ns" statefulset/planet4-"$i"-redis-master
     done
+    printf '\n ... wait 1 minute for things to restart \n'
+    sleep 60
     kubectl get pod -A -l app=redis -o wide | grep "$deployenv"
   fi
 else
@@ -101,13 +105,17 @@ printf '\nRestarting P4 Wordpress deployments, if cordoned they will move to a n
 if [ -z "$nro" ]
 then
   if [[ $deployenv = development ]]; then
-    for i in $(kubectl get pods -n develop | grep -m "$count" openresty | /
+    for i in $(kubectl get pods -n develop | grep -m "$count" openresty | \
     awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
       kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-openresty
+      sleep 10
       kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-php
+      sleep 10
     done
+    printf '\n ... wait 1 minute for things to restart \n'
+    sleep 60
     kubectl get pods -n develop -l app=planet4 -o wide
   else
     for i in $(kubectl get deployment -A | grep -m "$count" "$deployenv"-wordpress-openresty | \
@@ -116,7 +124,9 @@ then
       echo " $i ..."
       ns=$(kubectl get pods -A | grep -w "$i" |cut -d' ' -f1 | sort -u)
       kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-openresty
+      sleep 10
       kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-php
+      sleep 10
     done
     kubectl get pods -A -l app=planet4 -o wide | grep "$deployenv"
   fi
