@@ -88,7 +88,7 @@ echo "========================================================================="
 echo
 echo "Now is the time to trigger a full rebuild of the application in CI"
 echo
-echo "Visit https://circleci.com/gh/greenpeace/planet4-base-fork and rerun the 'trigger-planet4' job."
+echo "Visit https://circleci.com/gh/greenpeace/planet4-base and rerun the 'trigger-planet4' job."
 echo
 echo "Enter 'y' when all sites have been deployed."
 echo
