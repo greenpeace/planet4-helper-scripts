@@ -63,7 +63,7 @@ do
     continue
   fi
 
-  kubectl -n kube-system delete "$i"
+  kubectl rollout restart -n kube-system deployment/traefik
   sleep 30
 done
 

@@ -56,7 +56,7 @@ printf '\nRestarting non-P4 deployments, if cordoned they will move to a new nod
  for i in $(kubectl get deployments -A --selector=app!=planet4 | awk '{print $2}' | tail -n +2)
     do
       echo " $i ..."
-      ns=$(kubectl get deployments -A --selector=app!=planet4 | grep $i | awk '{print $1}' | head -1 )
+      ns=$(kubectl get deployments -A --selector 'app notin (planet4,traefik)' | grep $i | awk '{print $1}' | head -1 )
       kubectl rollout restart -n "$ns" deployment/"$i"
       printf '\n ... wait 1 minute for things to restart \n'
       sleep 60
@@ -71,7 +71,7 @@ printf '\nRestarting non-P4 stateful sets, if cordoned they will move to a new n
  for i in $(kubectl get statefulsets -A --selector=app!=redis | awk '{print $2}' | tail -n +2)
     do
       echo " $i ..."
-      ns=$(kubectl get deployments -A --selector=app!=planet4 | grep $i | awk '{print $1}' | head -1 )
+      ns=$(kubectl get statefulsets -A --selector 'app notin (planet4,traefik)' | grep $i | awk '{print $1}' | head -1 )
       kubectl rollout restart -n "$ns" deployment/"$i" 
       printf '\n ... wait 1 minute for things to restart \n'
       sleep 60
