@@ -27,6 +27,10 @@ function set_bucket_level_role {
  echo "for now just echoing: ${bucket}"
 }
 
+function remove_storage_admin_role {
+  echo "removing storage admin role from $1 service account"
+}
+
 # generate a listing of service accounts
 echo "Please wait - generating service account and bucket listing"
 gcloud iam service-accounts list --format json | jq .[].email | tr -d \" > ${SERVICE_ACCOUNT_LIST}
@@ -55,6 +59,7 @@ then
         echo "applying role to $i"
         set_bucket_level_role "$i"
       done
+      remove_storage_admin_role ${sa}
     fi
   done < "${SERVICE_ACCOUNT_LIST}"
   return=0
@@ -79,6 +84,7 @@ else
       set_bucket_level_role "$i"
     done
   fi
+  remove_storage_admin_role ${SERVICE_ACCOUNT}
   unset ${sa_buckets}
   return=0
 fi
