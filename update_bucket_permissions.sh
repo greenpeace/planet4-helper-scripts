@@ -85,7 +85,6 @@ else
     done
   fi
   remove_storage_admin_role ${SERVICE_ACCOUNT}
-  unset ${sa_buckets}
   return=0
 fi
 
