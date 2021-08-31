@@ -33,7 +33,7 @@ function remove_storage_admin_role {
 
 # generate a listing of service accounts
 echo "Please wait - generating service account and bucket listing"
-gcloud iam service-accounts list --format json | jq .[].email | tr -d \" > ${SERVICE_ACCOUNT_LIST}
+gcloud iam service-accounts list --project planet-4-151612 --format json | jq .[].email | tr -d \" > ${SERVICE_ACCOUNT_LIST}
 gsutil ls > ${BUCKET_LIST}
 
 if [ "${SERVICE_ACCOUNT}" == "all" ]
