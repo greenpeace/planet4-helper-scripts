@@ -21,6 +21,11 @@ function get_buckets {
   echo ${RESULT[*]}
 }
 
+function set_bucket_level_role {
+ # this function will apply a role to a bucket
+ bucket=$1
+ echo "for now just echoing: ${bucket}"
+}
 
 # generate a listing of service accounts
 echo "Please wait - generating service account and bucket listing"
@@ -45,6 +50,11 @@ then
       # also check and remove Storage Admin role
       echo "found buckets for ${sa}:"
       echo ${sa_buckets[*]}
+      for i in "${sa_buckets[@]}"
+      do
+        echo "applying role to $i"
+        set_bucket_level_role "$i"
+      done
     fi
   done < "${SERVICE_ACCOUNT_LIST}"
   return=0
@@ -62,6 +72,12 @@ else
     # also check and remove Storage Admin role
     echo "found buckets for ${SERVICE_ACCOUNT}:"
     echo ${sa_buckets[*]}
+    echo "applying new role"
+    for i in "${sa_buckets[@]}"
+    do
+      echo "applying role to $i"
+      set_bucket_level_role "$i"
+    done
   fi
   unset ${sa_buckets}
   return=0
