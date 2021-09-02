@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -eu
+#!/bin/bash
 
 function usage {
   echo "Usage: $(basename "$0") nro_name"
@@ -23,12 +22,56 @@ function get_buckets {
 
 function set_bucket_level_role {
  # this function will apply a role to a bucket
- bucket=$1
- echo "for now just echoing: ${bucket}"
+ sa="$1"
+ bucket="$2"
+ control=0
+
+ bindings_file="/tmp/bindings.jq"
+ echo "sa=$sa bucket=$bucket"
+ # save a temporary file with bindings for the current bucket
+ gsutil iam get ${bucket} | jq .bindings > ${bindings_file}
+ # get the lenght of bindigs array
+ bindigs_length=$(cat ${bindings_file} | jq 'length' )
+ # check if sa is member of any role
+ for ((i=0; i<${bindigs_length} ; i++))
+ do
+   # first check if sa is member of any role
+   cat "${bindings_file}" | jq .[$i].members | grep "${sa}"
+   if [ $? = 0 ]
+   then
+     member_of=$(cat ${bindings_file} | jq .[$i].role)
+     # is sa memberof roles/storage.admin ?
+     if [ "${member_of}" == "\"roles/storage.admin\"" ]
+     then
+       echo "${sa} is already member of role ${member_of}"
+       control=0
+       break
+     else
+       control=1
+     fi
+   else
+     control=1
+   fi
+ done
+
+ if [ ${control} -eq 1 ]
+ then
+   # sa is not a member of roles/storage.admin - adding it
+   echo "adding ${sa} as member of roles/storage.admin"
+   gsutil iam ch serviceAccount:${sa}:roles/storage.admin ${bucket}
+   if [ $? -eq 0 ]
+   then
+     echo "added ${sa} as member of roles/storage.admin"
+   else
+     echo "ERROR: could not add ${sa} as member of roles/storage.admin - aborting"
+     exit 1
+   fi
+ fi
 }
 
 function remove_storage_admin_role {
-  echo "removing storage admin role from $1 service account"
+  sa=$1
+  echo "not yet - removing storage admin role from ${sa} service account"
 }
 
 # generate a listing of service accounts
@@ -57,9 +100,9 @@ then
       for i in "${sa_buckets[@]}"
       do
         echo "applying role to $i"
-        set_bucket_level_role "$i"
+        echo "set_bucket_level_role ${sa} $i"
       done
-      remove_storage_admin_role ${sa}
+      # remove_storage_admin_role ${sa}
     fi
   done < "${SERVICE_ACCOUNT_LIST}"
   return=0
@@ -69,22 +112,21 @@ then
  fi
 else
   # create an array of buckets that belongs to SERVICE_ACCOUNT
-  sa_buckets=($(get_buckets ${SERVICE_ACCOUNT}))
+  sa=$(cat ${SERVICE_ACCOUNT_LIST} | grep ${SERVICE_ACCOUNT} )
+  sa_buckets=($(get_buckets ${sa}))
   len=${#sa_buckets[@]}
   if [ ${len} -ge 1 ]
   then
-    # here we can add a function to check and assign permissions on bucket
-    # also check and remove Storage Admin role
-    echo "found buckets for ${SERVICE_ACCOUNT}:"
+    echo "found buckets for ${sa}:"
     echo ${sa_buckets[*]}
     echo "applying new role"
     for i in "${sa_buckets[@]}"
     do
       echo "applying role to $i"
-      set_bucket_level_role "$i"
+      set_bucket_level_role ${sa} $i
     done
   fi
-  remove_storage_admin_role ${SERVICE_ACCOUNT}
+  remove_storage_admin_role ${sa}
   return=0
 fi
 
