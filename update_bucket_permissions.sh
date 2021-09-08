@@ -12,6 +12,8 @@ fi
 
 SERVICE_ACCOUNT=$1
 SERVICE_ACCOUNT_LIST=/tmp/service_account.lst
+ROLES_LIST=/tmp/roles.lst
+STORAGE_ADMIN_MEMBERS=/tmp/storage_admin_members.lst
 BUCKET_LIST=/tmp/bucket.lst
 
 function get_buckets {
@@ -43,7 +45,7 @@ function set_bucket_level_role {
      # is sa memberof roles/storage.admin ?
      if [ "${member_of}" == "\"roles/storage.admin\"" ]
      then
-       echo "${sa} is already member of role ${member_of}"
+       echo "=> ${sa} is already member of role ${member_of}"
        control=0
        break
      else
@@ -61,9 +63,9 @@ function set_bucket_level_role {
    gsutil iam ch serviceAccount:${sa}:roles/storage.admin ${bucket}
    if [ $? -eq 0 ]
    then
-     echo "added ${sa} as member of roles/storage.admin"
+     echo "=> added ${sa} as member of roles/storage.admin"
    else
-     echo "ERROR: could not add ${sa} as member of roles/storage.admin - aborting"
+     echo "=> ERROR: could not add ${sa} as member of roles/storage.admin - aborting"
      exit 1
    fi
  fi
@@ -71,13 +73,35 @@ function set_bucket_level_role {
 
 function remove_storage_admin_role {
   sa=$1
-  echo "not yet - removing storage admin role from ${sa} service account"
+  project=$2
+  # check if $sa member of roles/storage.admin
+  grep -q ${sa} ${STORAGE_ADMIN_MEMBERS}
+  if [ $? -eq 0 ]
+  then
+    echo "removing ${sa} from roles/storage.admin"
+    gcloud projects remove-iam-policy-binding ${project} --member=serviceAccount:${sa} --role=roles/storage.admin 2>&1
+  else
+    echo "=> $sa is not a ${project} roles/storage.admin member"
+  fi
 }
 
 # generate a listing of service accounts
 echo "Please wait - generating service account and bucket listing"
 gcloud iam service-accounts list --project planet-4-151612 --format json | jq .[].email | tr -d \" > ${SERVICE_ACCOUNT_LIST}
 gsutil ls > ${BUCKET_LIST}
+# get current project
+PROJECT=$(gcloud config get-value project)
+# genereate a role index of iam policy
+gcloud projects get-iam-policy ${PROJECT} --format=json | jq .bindings | grep role > ${ROLES_LIST}
+# check if roles/storage.admin exists
+grep -q storage.admin ${ROLES_LIST}
+if [ $? -eq 0 ]
+then
+  # get project roles/storage.admin members
+  i=$(grep -n storage.admin ${ROLES_LIST} | cut -f1 -d:)
+  i=$((i-1))
+  gcloud projects get-iam-policy ${PROJECT} --format=json | jq .bindings[${i}].members > ${STORAGE_ADMIN_MEMBERS}
+fi
 
 if [ "${SERVICE_ACCOUNT}" == "all" ]
 then
@@ -102,7 +126,8 @@ then
         echo "applying role to $i"
         echo "set_bucket_level_role ${sa} $i"
       done
-      # remove_storage_admin_role ${sa}
+      # only run remove_storage_admin_role if role actually exists
+      [ -f ${STORAGE_ADMIN_MEMBERS} ] && remove_storage_admin_role ${sa} ${PROJECT}
     fi
   done < "${SERVICE_ACCOUNT_LIST}"
   return=0
@@ -126,9 +151,10 @@ else
       set_bucket_level_role ${sa} $i
     done
   fi
-  remove_storage_admin_role ${sa}
+  # only run remove_storage_admin_role if role actually exists
+  [ -f ${STORAGE_ADMIN_MEMBERS} ] && remove_storage_admin_role ${sa} ${PROJECT}
   return=0
 fi
 
-rm -f ${SERVICE_ACCOUNT_LIST} ${BUCKET_LIST}
+rm -f ${SERVICE_ACCOUNT_LIST} ${BUCKET_LIST} ${ROLES_LIST} ${STORAGE_ADMIN_MEMBERS}
 exit ${return}
