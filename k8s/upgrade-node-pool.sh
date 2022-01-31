@@ -54,7 +54,7 @@ fi
 # move ingress controller to new node pool
 echo
 echo "Moving ingress controller pods to new node pool ..."
-for i in $(kubectl -n kube-system get pod -l app=traefik -o name)
+for i in $(kubectl -n nginx-ingress get pod -o name)
 do
   echo " $i ..."
   if kubectl -n kube-system get "$i" -o wide | grep -q "$new_pool"
@@ -67,7 +67,7 @@ do
   sleep 30
 done
 
-kubectl -n kube-system get pod -l app=traefik -o wide
+kubectl -n nginx-ingress get pod -o wide
 
 read -rp "Continue ? " answer
 case ${answer:0:1} in
