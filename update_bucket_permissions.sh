@@ -11,6 +11,10 @@ then
 fi
 
 SERVICE_ACCOUNT=$1
+skip_sas=(
+  "planet-4-151612@appspot.gserviceaccount.com" 
+  "stateless-nikos-test-plane-158@planet-4-151612.iam.gserviceaccount.com"
+  )
 SERVICE_ACCOUNT_LIST=/tmp/service_account.lst
 ROLES_LIST=/tmp/roles.lst
 STORAGE_ADMIN_MEMBERS=/tmp/storage_admin_members.lst
@@ -79,6 +83,7 @@ function remove_storage_admin_role {
   if [ $? -eq 0 ]
   then
     echo "removing ${sa} from roles/storage.admin"
+    echo "and project ${project}"
     gcloud projects remove-iam-policy-binding ${project} --member=serviceAccount:${sa} --role=roles/storage.admin 2>&1
   else
     echo "=> $sa is not a ${project} roles/storage.admin member"
@@ -103,6 +108,10 @@ then
   gcloud projects get-iam-policy ${PROJECT} --format=json | jq .bindings[${i}].members > ${STORAGE_ADMIN_MEMBERS}
 fi
 
+echo "Service account before processing: ${SERVICE_ACCOUNT}"
+if [[ "${SERVICE_ACCOUNT}" == *"test"* ]]; then SERVICE_ACCOUNT="${SERVICE_ACCOUNT//-}"; fi
+echo "Service account after processing: ${SERVICE_ACCOUNT}"
+
 if [ "${SERVICE_ACCOUNT}" == "all" ]
 then
  echo "this will update permissions for all service accounts"
@@ -111,8 +120,13 @@ then
  then
   while IFS= read -r sa
   do
+    if [[ "${skip_sas[*]}" =~ "${sa}" ]]; then
+     echo "Skipping: ${sa} because it is in the skip list"
+     continue
+    fi
     echo "Checking buckets for ${sa}"
-    sa_buckets=($(get_buckets ${sa}))
+    bucket_name=${sa//test/test-}
+    sa_buckets=($(get_buckets ${bucket_name}))
     # get the sa_buckets_array lenght
     len=${#sa_buckets[@]}
     if [ ${len} -ge 1 ]
@@ -124,10 +138,10 @@ then
       for i in "${sa_buckets[@]}"
       do
         echo "applying role to $i"
-        echo "set_bucket_level_role ${sa} $i"
+        set_bucket_level_role ${sa} $i
       done
       # only run remove_storage_admin_role if role actually exists
-      [ -f ${STORAGE_ADMIN_MEMBERS} ] && remove_storage_admin_role ${sa} ${PROJECT}
+      [ -f ${STORAGE_ADMIN_MEMBERS} ] && remove_storage_admin_role "${sa}" "${PROJECT}"
     fi
   done < "${SERVICE_ACCOUNT_LIST}"
   return=0
@@ -137,8 +151,9 @@ then
  fi
 else
   # create an array of buckets that belongs to SERVICE_ACCOUNT
-  sa=$(cat ${SERVICE_ACCOUNT_LIST} | grep ${SERVICE_ACCOUNT} )
-  sa_buckets=($(get_buckets ${sa}))
+  sa=$(cat ${SERVICE_ACCOUNT_LIST} | grep "${SERVICE_ACCOUNT}" )
+  bucket_name=${sa//test/test-}
+  sa_buckets=($(get_buckets ${bucket_name}))
   len=${#sa_buckets[@]}
   if [ ${len} -ge 1 ]
   then
