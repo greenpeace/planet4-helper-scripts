@@ -44,7 +44,7 @@ echo "Cluster:   $cluster"
 }
 
 disk_size=${DISK_SIZE:-200}
-machine_type=${MACHINE_TYPE:-n1-standard-4}
+machine_type=${MACHINE_TYPE:-e2-standard-4}
 
 min_nodes=${MIN_NODES:-10}
 max_nodes=${MAX_NODES:-20}

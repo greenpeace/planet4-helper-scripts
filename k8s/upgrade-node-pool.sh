@@ -63,7 +63,7 @@ do
     continue
   fi
 
-  kubectl -n kube-system delete "$i"
+  kubectl rollout restart -n kube-system deployment/traefik
   sleep 30
 done
 
@@ -83,14 +83,35 @@ esac
 # cordon nodes
 ./cordon_node_pool.sh "$old_pool"
 
-# perform graceful p4 rollout
+# perform graceful non-p4 restart
 echo "========================================================================="
 echo
-echo "Now is the time to trigger a full rebuild of the application in CI"
+echo "Now is the time to restart the non-P4 applications"
 echo
-echo "Visit https://circleci.com/gh/greenpeace/planet4-base and rerun the 'trigger-planet4' job."
+echo "Switch to another tab and run ./restart_infra_pods.sh"
 echo
-echo "Enter 'y' when all sites have been deployed."
+echo "Enter 'y' when all infra apps have been deployed to the new pool."
+echo
+
+read -rp "Continue ? [y/N] " answer
+case ${answer:0:1} in
+    y|Y )
+        echo Yes
+    ;;
+    * )
+        echo No
+        exit 1
+    ;;
+esac
+
+# perform graceful p4 restart
+echo "========================================================================="
+echo
+echo "Now is the time to restart the P4 applications"
+echo
+echo "Switch to another tab and run ./restart_p4_pods.sh"
+echo
+echo "Enter 'y' when all sites have been deployed to the new pool."
 echo
 
 read -rp "Continue ? [y/N] " answer
