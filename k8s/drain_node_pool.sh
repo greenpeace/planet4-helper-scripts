@@ -36,7 +36,7 @@ do
   echo
   i=$(( i + 1 ))
   echo " $i/$num >> Draining ${node#node\/} ..."
-  time kubectl drain --force --ignore-daemonsets --delete-local-data --grace-period=300 "${node}"
+  time kubectl drain --force --ignore-daemonsets --delete-emptydir-data --grace-period=300 "${node}"
   echo
   date
   [[ $i < $num ]] && {
@@ -47,7 +47,5 @@ do
     set -e
   }
 done
-
-echo
 
 exit 0

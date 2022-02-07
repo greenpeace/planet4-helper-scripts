@@ -54,18 +54,7 @@ fi
 # move ingress controller to new node pool
 echo
 echo "Moving ingress controller pods to new node pool ..."
-for i in $(kubectl -n nginx-ingress get pod -o name)
-do
-  echo " $i ..."
-  if kubectl -n kube-system get "$i" -o wide | grep -q "$new_pool"
-  then
-    echo "    ... SKIP: on new node-pool already"
-    continue
-  fi
-
-  kubectl rollout restart -n kube-system deployment/traefik
-  sleep 30
-done
+kubectl rollout restart -n nginx-ingress deployment/nginx-ingress-ingress-nginx-controller
 
 kubectl -n nginx-ingress get pod -o wide
 

@@ -77,7 +77,7 @@ then
       kubectl rollout restart -n develop statefulset/planet4-"$i"-redis-master
     done
     printf '\n ... wait 1 minute for things to restart \n'
-    sleep 60
+    sleep 5
     kubectl get pod -n develop -o wide | grep redis
   else
     for i in $(kubectl get pod -A | grep "$deployenv"-redis | grep -m "$count" redis | \
@@ -88,7 +88,7 @@ then
       kubectl rollout restart -n "$ns" statefulset/planet4-"$i"-redis-master
     done
     printf '\n ... wait 1 minute for things to restart \n'
-    sleep 60
+    sleep 5
     kubectl get pod -A -l app=redis -o wide | grep "$deployenv"
   fi
 else
@@ -110,12 +110,12 @@ then
     do
       echo " $i ..."
       kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-openresty
-      sleep 10
+      sleep 5
       kubectl rollout restart -n develop deployment/planet4-"$i"-wordpress-php
-      sleep 10
+      sleep 5
     done
     printf '\n ... wait 1 minute for things to restart \n'
-    sleep 60
+    sleep 5
     kubectl get pods -n develop -l app=planet4 -o wide
   else
     for i in $(kubectl get deployment -A | grep -m "$count" "$deployenv"-wordpress-openresty | \
@@ -124,9 +124,9 @@ then
       echo " $i ..."
       ns=$(kubectl get pods -A | grep -w "$i" |cut -d' ' -f1 | sort -u)
       kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-openresty
-      sleep 10
+      sleep 5
       kubectl rollout restart -n "$ns" deployment/planet4-"$i"-wordpress-php
-      sleep 10
+      sleep 5
     done
     kubectl get pods -A -l app=planet4 -o wide | grep "$deployenv"
   fi
@@ -142,8 +142,8 @@ else
   kubectl get pod -A -l app=planet4 -o wide | grep "$nro" | grep "$deployenv"
 fi
 
-printf '\nChecking everything has restarted successfully ... wait 1 minute for things to restart \n'
-sleep 60
+printf '\nChecking everything has restarted successfully ... wait 5 minute for things to restart  then will perform endpoint testing \n'
+sleep 300
 if [ -z "$nro" ]
 then
   if [[ $deployenv = development ]]; then
