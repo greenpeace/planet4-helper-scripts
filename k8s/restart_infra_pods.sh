@@ -10,12 +10,12 @@ select name in Development Production
 do
   case "$name" in
     Development)
-      kube_env=$(kubectx gke_planet-4-151612_us-central1-a_p4-development)
+      kube_env=$(kubectl config set-context gke_planet-4-151612_us-central1-a_p4-development)
       gcloud config set project planet-4-151612
       break
       ;;
     Production)
-      kube_env=$(kubectx gke_planet4-production_us-central1-a_planet4-production)
+      kube_env=$(kubectl config set-context gke_planet4-production_us-central1-a_planet4-production)
       gcloud config set project planet4-production
       break
       ;;
