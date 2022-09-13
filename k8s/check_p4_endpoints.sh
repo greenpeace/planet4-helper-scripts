@@ -10,12 +10,12 @@ select name in Development Production
 do
   case "$name" in
     Development)
-      kube_env=$(kubectx gke_planet-4-151612_us-central1-a_p4-development)
+      kube_env=$(kubectl config set-context gke_planet-4-151612_us-central1-a_p4-development)
       gcloud config set project planet-4-151612
       break
       ;;
     Production)
-      kube_env=$(kubectx gke_planet4-production_us-central1-a_planet4-production)
+      kube_env=$(kubectl config set-context gke_planet4-production_us-central1-a_planet4-production)
       gcloud config set project planet4-production
       break
       ;;
@@ -75,7 +75,7 @@ then
       awk -F '-wordpress' '{print $1}' | cut -c 9-| sort -u)
     do
       echo " $i ..."
-      url=$(kubectl get ingress -n develop planet4-"$i"-wordpress-openresty \
+      url=$(kubectl get ingress -n develop planet4-"$i"-wordpress-openresty-nginx \
         -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
       if curl -fsSI "https://$url" &>/dev/null; then
         echo -e "https://$url" "${GREEN}OK${NC}"
@@ -85,12 +85,12 @@ then
     done
   else
     for i in $(kubectl get deployment -A | grep "$deployenv"-wordpress | grep -m "$count" openresty | \
-      awk -F '-wordpress' '{print $1}' | cut -c 29-| sort -u)
+      awk -F '-wordpress' '{print $1}' | cut -c 28-| sort -u)
     do
       echo " $i ..."
       if
       ns=$(kubectl get pods -A | grep -w "$i" |cut -d' ' -f1 | sort -u )
-      url=$(kubectl get ingress -n "$ns" planet4-"$i"-wordpress-openresty \
+      url=$(kubectl get ingress -n "$ns" planet4-"$i"-wordpress-openresty-nginx \
         -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
       curl -fsSI  "https://$url" &>/dev/null
       then
@@ -102,7 +102,7 @@ then
 else
   if [[ $deployenv = development ]]; then
     if
-    url=$(kubectl get ingress -n develop planet4-"$nro"-wordpress-openresty \
+    url=$(kubectl get ingress -n develop planet4-"$nro"-wordpress-openresty-nginx \
       -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
     curl -fsSI "https://$url/" &>/dev/null
     then
@@ -112,7 +112,7 @@ else
   else
     if
     ns=$(kubectl get pods -A | grep "$nro" |cut -d' ' -f1 | sort -u )
-    url=$(kubectl get ingress -n "$ns" planet4-"$nro"-"$deployenv"-wordpress-openresty \
+    url=$(kubectl get ingress -n "$ns" planet4-"$nro"-"$deployenv"-wordpress-openresty-nginx \
       -o=jsonpath='{.spec.rules[:1].host}{.spec.rules[:1].http.paths[:1].path}')
     curl -fsSI  "https://$url" &>/dev/null
     then
