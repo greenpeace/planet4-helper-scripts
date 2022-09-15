@@ -10,8 +10,13 @@ if [ "$env" == "dev" ]; then
 elif [ "$env" == "staging" ]; then
 	gcloud container clusters get-credentials planet4-production --zone us-central1-a --project planet4-production
 	while read -r resource; do 
-		helm uninstall -n "$resource"
+		helm uninstall -n <<< echo $resource 
 		resource2=$(echo "$resource" | cut -d " " -f2 | cut -d "-" -f1,2)
 		/usr/bin/multi-gitter run --config=config.yml --repo=greenpeace/"${resource2}" ./update_namespace.sh
+		echo "=========="
+		echo " Just finished updating namespaces for ${resource2}"
+		echo " Sleeping for 5 seconds"
+		echo "=========="
+		sleep 5
 	done < <(helm ls -a --all-namespaces | grep "release" | awk 'NR > 1 { print  $2, $1}')
 fi
