@@ -22,9 +22,9 @@ elif [ "$env" == "staging" ]; then
 	# read `$resource`
 	while read -r resource; do 
 		# uninstall the helm release
-		helm uninstall -n <<< echo $resource 
+		helm uninstall -n $resource
 		# drop the namespace from the `resource` var and cut off -release from the helm release name so we get e.g. "planet4-argentina"
-		resource2=$(echo "$resource" | cut -d " " -f2 | cut -d "-" -f1,2)
+		resource2=$(echo "$resource" | cut -d " " -f2 | rev | cut -d '-' --complement -f 1 | rev)
 		# run helm-gitter to update the HELM_NAMESPACE in the git repository and push a new tag/release
 		/usr/bin/multi-gitter run --config=config.yml --repo=greenpeace/"${resource2}" ./update_namespace.sh
 		echo "=========="
@@ -33,7 +33,7 @@ elif [ "$env" == "staging" ]; then
 		echo "=========="
 		sleep 5
 	# pipe in the helm listing. grep `release` and pick up the name/namespace and reverse them so we can use them for running `helm uninstall -n` on it
-	done < <(helm ls -a --all-namespaces | grep "release" | awk 'NR > 1 { print  $2, $1}')
+	done < <(helm ls -a --all-namespaces | grep -v "staging" | grep "release" | awk 'NR > 1 { print  $2, $1}')
 ## production env
 elif [ "$env" == "production" ]; then
 	# get credentials to authenticate
@@ -41,7 +41,7 @@ elif [ "$env" == "production" ]; then
 	# read `$resource`
 	while read -r resource; do 
 		# uninstall the helm release
-		helm uninstall -n <<< echo $resource 
+		helm uninstall -n <<< echo "${resource}"
 		# drop the namespace from the `resource` var and cut off -release from the helm release name so we get e.g. "planet4-argentina"
 		resource2=$(echo "$resource" | cut -d " " -f2 | cut -d "-" -f1,2)
 		# run helm-gitter to update the HELM_NAMESPACE in the git repository and push a new tag/release
