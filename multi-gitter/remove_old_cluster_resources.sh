@@ -33,7 +33,7 @@ elif [ "$env" == "staging" ]; then
 		echo "=========="
 		sleep 5
 	# pipe in the helm listing. grep `release` and pick up the name/namespace and reverse them so we can use them for running `helm uninstall -n` on it
-	done < <(helm ls -a --all-namespaces | grep -v "staging" | grep "release" | awk 'NR > 1 { print  $2, $1}')
+	done < <(helm ls -a --all-namespaces | grep -v "staging" | grep "release" | awk '{ print  $2, $1}')
 ## production env
 elif [ "$env" == "production" ]; then
 	# get credentials to authenticate
