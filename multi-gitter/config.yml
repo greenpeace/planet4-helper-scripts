@@ -4,10 +4,3 @@ skip-pr: true
 log-level: debug
 commit-message: "PLANET-6884: Update namespace variables to bring dev and staging in line with production"
 dry-run: false
-repo:
-  [
-    "greenpeace/planet4-test-deimos",
-    "greenpeace/planet4-test-iocaste",
-    "greenpeace/planet4-test-jupiter",
-    "greenpeace/planet4-test-leda",
-  ]
