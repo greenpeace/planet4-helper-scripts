@@ -12,40 +12,43 @@ function load_ga_credentials() {
   set -e
 }
 
+#
+# Ask release
+#
 release=${1:-}
 
 [[ -z "$release" ]] && {
 
-  echo
-  echo " > helm ls"
-  echo
-  helm ls
-  echo
-  echo "---"
-  echo
   read -rp "Enter Helm release: " release
 }
 
-if ! helm status "$release"
+#
+# Ask namespace
+#
+
+namespace=${2:-}
+
+[[ -z "$namespace" ]] && {
+
+  read -rp "Enter Helm namespace: " namespace
+}
+
+#
+# Check resource
+#
+
+if ! helm status "$release" -n "$namespace"
 then
-  echo "ERROR: Release '$release' not found."
+  echo "ERROR: Release '$release' not found in namespace '$namespace' ."
   exit 1
 fi
-#
-# Determine namespace from release
-#
-namespace=${2:-$(./get_namespace.sh "$release")}
-if ! kubectl get namespace "$namespace" > /dev/null
-then
-  echo "ERROR: Namespace '$namespace' not found."
-  exit 1
-fi
+
 #
 # Determine redis pod name
 #
 redis=${3:-$(kubectl get pods --namespace "${namespace}" \
     --field-selector=status.phase=Running \
-    -l "app=redis,role=master,release=${release}" \
+    -l "app.kubernetes.io/name=redis" \
     -o jsonpath="{.items[0].metadata.name}")}
 
 if ! kubectl -n "$namespace" get pod "$redis" > /dev/null
