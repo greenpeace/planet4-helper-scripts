@@ -39,14 +39,14 @@ gcloud config set project $GOOGLE_PROJECT_ID
 echo $GOOGLE_PROJECT_ID
 echo $BUCKET_TAG
 
-gsutil ls | grep $BUCKET_TAG >> bucket_list
+gcloud storage ls ls | grep $BUCKET_TAG >> bucket_list
 
 #2b. Check if any CORS settings already exist, if so skip ?
 
 while read -r BUCKET_NAME
 do
   echo "Checking for existing CORS configuration in $BUCKET_NAME"
-  gsutil cors get $BUCKET_NAME >> "$RELEASE"_corsconfig_current 2>&1
+  gcloud storage buckets describe $BUCKET_NAME --format="default(cors_config)" >> "$RELEASE"_corsconfig_current 2>&1
 done < bucket_list
 rm bucket_list
 
@@ -65,5 +65,5 @@ fi
 while read -r BUCKET_NAME
 do
   echo "Applying CORS configuration per $CORS_JSON_FILE and "$RELEASE"_corsconfig_action"
-  gsutil cors set $CORS_JSON_FILE $BUCKET_NAME >> $LOG_FILE 2>&1
+  gcloud storage buckets update $BUCKET_NAME --cors-file=$CORS_JSON_FILE >> $LOG_FILE 2>&1
 done < "$RELEASE"_corsconfig_action

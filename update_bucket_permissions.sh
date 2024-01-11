@@ -35,7 +35,7 @@ function set_bucket_level_role {
  bindings_file="/tmp/bindings.jq"
  echo "sa=$sa bucket=$bucket"
  # save a temporary file with bindings for the current bucket
- gsutil iam get ${bucket} | jq .bindings > ${bindings_file}
+ gcloud storage buckets get-iam-policy ${bucket} --format json | jq .bindings > ${bindings_file}
  # get the lenght of bindigs array
  bindigs_length=$(cat ${bindings_file} | jq 'length' )
  # check if sa is member of any role
@@ -64,7 +64,7 @@ function set_bucket_level_role {
  then
    # sa is not a member of roles/storage.admin - adding it
    echo "adding ${sa} as member of roles/storage.admin"
-   gsutil iam ch serviceAccount:${sa}:roles/storage.admin ${bucket}
+   gcloud storage buckets set-iam-policy-binding ${bucket} --member=serviceAccount:${sa} --role=roles/storage.admin
    if [ $? -eq 0 ]
    then
      echo "=> added ${sa} as member of roles/storage.admin"
@@ -93,7 +93,7 @@ function remove_storage_admin_role {
 # generate a listing of service accounts
 echo "Please wait - generating service account and bucket listing"
 gcloud iam service-accounts list --project planet-4-151612 --format json | jq .[].email | tr -d \" > ${SERVICE_ACCOUNT_LIST}
-gsutil ls > ${BUCKET_LIST}
+gcloud storage ls > ${BUCKET_LIST}
 # get current project
 PROJECT=$(gcloud config get-value project)
 # genereate a role index of iam policy
